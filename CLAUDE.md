@@ -61,6 +61,9 @@ Developer-facing material:
 - Explain with plain language, easy examples, and realistic side effects.
 - When explaining complex architecture, design patterns, libraries, or UI changes, use a publishing-house analogy or everyday analogy.
 - If UI change is involved, include a text-based UI skeleton so the developer can picture the result.
+- Write Korean proposals for a nontechnical owner: elementary-friendly, plain, warm, concrete.
+- Explain jargon on first use with an AgentScribe or publishing-house example.
+- Each Korean proposal must open with a short elementary-friendly summary and a concrete screen/workflow example before any detailed technical section.
 
 All Korean project documents must be UTF-8. If output appears garbled, verify encoding before interpreting the content.
 

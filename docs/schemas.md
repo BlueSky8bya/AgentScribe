@@ -34,6 +34,20 @@ Editorial Room design assets + lock. `WorkRecord` bumped to `0.2.0` (back-compat
 
 Deterministic preflight (`src/core/preflight/`): `candidateGates` (severity fatal/reject/blocking_warn/warn/skip), `schemaCanary` (orphan/missing/duplicate), `lockBlueprint` (refuse on reject/blocking_warn/canary-error; pure warns need acknowledge), `revisionImpact`.
 
+## Phase 3A schemas (IMPLEMENTED) — minimal seed + auto-expansion
+
+`WorkRecord` 0.2.0 -> 0.3.0 (chained `migrateWork`). No LLM (deterministic).
+
+- `CharacterPublicSeed` + `gender`, `personality_brief`.
+- `WorldRule` (worldRule.ts) — Canonical world rules.
+- `ScaleCheck` (scaleCheck.ts) — INTERNAL, never shown raw to user: declared_scale, target_episodes, episode_length, episode_length_unit (ko_chars), planned_total_length, effective_scale, scale_consistency (ok/warn/blocking_warn), scale_override_reason.
+- `WorkRecord.public` + `world_rules`, `scale_check`.
+
+Logic (`src/core/`):
+- `scale/scaleCheck.ts` — episode-count bands (AgentScribe initial defaults, NOT a literary standard; default 5000 ko_chars/episode). `computeScaleCheck`, `scaleFromEpisodes`, `defaultEpisodes`, `scaleGuidanceMessage`.
+- `expand/ExpanderAdapter.ts` + `deterministicExpander.ts` — rule-based draft generator (3A; LLM swap is 3B). Produces editable proposals (provenance agent_preflight); private drafts go to the firewalled private group.
+- `bootstrapWork.ts` — minimal seed -> scale check -> expander -> assembled WorkRecord (effective_scale drives blueprint/gates/expander).
+
 ## Deferred stub schemas (direction only; freeze in their Phase)
 
 `craft_trait_schema`, `craft_selection_schema`, `craft_decision_log_schema`, `character_bible_schema`, `cast_registry_schema`, `relationship_map_schema`, `character_reveal_schedule_schema`, `character_creation_gate_schema`, `cast_promotion_gate_schema`, `prompt_firewall_schema`, `character_info_grade/lifecycle_schema`, `cross_link/schema_canary`, `reader_probe_schema`, `subjective_evaluation_rubric_schema`, `judge_calibration_schema`, `model_routing_schema`, `llm_call_policy_schema`, `database_storage_schema`, `ui_screen_skeleton_schema`, `ui_latency_metrics_schema`, `character/cast_observability_schema`.

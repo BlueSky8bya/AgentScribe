@@ -4,7 +4,7 @@ import { WorkRecord, type WorkRecord as WR } from "../../src/core/schemas/index.
 /** A clean, lockable work (pass + canary clean, no warns). */
 export function cleanWork(): WR {
   return WorkRecord.parse({
-    schema_version: "0.2.0",
+    schema_version: "0.3.0",
     public: {
       seed: {
         work_id: "w1", genre: "wuxia", mood: "tragic", background: "war world",

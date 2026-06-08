@@ -15,7 +15,7 @@ import { seedValid } from "./fixtures/seed.fixtures.js";
 
 function makeWork() {
   return WorkRecord.parse({
-    schema_version: "0.2.0",
+    schema_version: "0.3.0",
     public: {
       seed: SeedSettings.parse(seedValid),
       intent: AuthorialIntent.parse({

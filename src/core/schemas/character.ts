@@ -12,12 +12,18 @@ export const CharacterRole = z.enum([
 ]);
 export type CharacterRole = z.infer<typeof CharacterRole>;
 
+export const Gender = z.enum(["male", "female", "nonbinary", "unspecified", "other"]);
+export type Gender = z.infer<typeof Gender>;
+
 /** Public seed — safe to pass to Writer (public_summary). */
 export const CharacterPublicSeed = z.object({
   character_id: z.string().min(1),
   name: z.string().min(1),
   role: CharacterRole,
   one_line: z.string().min(1),
+  // Phase 3 additions (back-compatible defaults).
+  gender: Gender.default("unspecified"),
+  personality_brief: z.string().default(""),
 });
 export type CharacterPublicSeed = z.infer<typeof CharacterPublicSeed>;
 

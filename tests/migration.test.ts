@@ -17,8 +17,9 @@ describe("migrateWork", () => {
       private: { characters: [] },
     };
     const w = migrateWork(old);
-    expect(w.schema_version).toBe("0.2.0");
+    expect(w.schema_version).toBe("0.3.0");
     expect(w.public.character_bibles).toEqual([]);
+    expect(w.public.world_rules).toEqual([]);
     expect(w.public.lock.status).toBe("unlocked");
   });
 });
