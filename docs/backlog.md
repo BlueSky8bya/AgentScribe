@@ -1,14 +1,30 @@
-<!-- [PROPOSAL: docs/proposals/LATEST_PROPOSAL.md §3] Foundation Bootstrap v001 stub -->
-# docs/backlog.md — Deferred Ideas
+<!-- [PROPOSAL: docs/proposals/archive/2026-06-08/proposal_pipeline_foundation_v001.md] Pipeline Foundation v001 (approved) -->
+# Deferred Ideas
 
-> 새 아이디어는 메인 루프에 즉시 반영하지 않고 여기 기록 후 본래 흐름 복귀 (헌법 §1).
+> New ideas go here, not the active loop (constitution §1). Each needs its own future proposal.
 
-| # | 우선순위 | 아이디어 | 출처 | 상태 |
-|---|---|---|---|---|
-| 1 | 중 | Vite 샘플 UI 정리/교체 | Foundation Bootstrap v001 §4 (범위 제외) | deferred |
-| 2 | 중 | QA 파이썬 엔진 실제 구현 (DSPy 여부 결정 포함) | Foundation Bootstrap v001 §4 | deferred |
-| 3 | 중 | `docs/seed_settings.json` 생성 (초기 소설 설정) | Foundation Bootstrap v001 §4 | deferred |
-| 4 | 하 | 14종 stub 문서 실제 내용 채우기 (각 후속 제안서) | Foundation Bootstrap v001 | deferred |
-| 5 | 하 | 모호함 점수 차원·가중치 표 운영 세부 확정 | change_protocol.md STUB | deferred |
+## From Foundation Bootstrap v001
 
-> STUB: 우선순위 enum/정렬 규칙은 추후 정의.
+| # | Pri | Idea | Status |
+|---|---|---|---|
+| 1 | mid | Vite sample UI cleanup/replace | deferred |
+| 2 | mid | QA Python engine real impl (DSPy?) | deferred |
+| 3 | mid | `seed_settings.json` content | folded into Phase 1 |
+
+## Deferred Architecture (Pipeline Foundation v001 §15.2 — direction approved, impl per future proposal)
+
+| # | Pri | Idea |
+|---|---|---|
+| 10 | high | Craft Trait Library full (Selection+Budget, Decision Log, application) — Phase 1 keeps stub only |
+| 11 | high | Character Bible / Cast Registry / Relationship Map / Reveal Schedule / Creation+Promotion Gate / info-grade / lifecycle / cross-link Schema Canary |
+| 12 | high | Prompt Firewall full (Phase 1 keeps "no private/secret to Writer" rule only) |
+| 13 | mid | Creative Review Room (critics + Chief Editor/Producer, cascade) |
+| 14 | mid | Reader Transportation Probe |
+| 15 | mid | Variant Drafting + Selection (high-risk episodes) |
+| 16 | mid | Blueprint Revision Impact Analysis |
+| 17 | mid | Scene Board / E-konte (Sensory Anchor, Negative Space) |
+| 18 | mid | Immersion Gates tiers 2/3 + Exposition Control Gate detail |
+| 19 | mid | Operational architecture: RACI impl, Subjective Eval + Calibration, Model/Key Routing, DB (PostgreSQL/pgvector), Initial UI/UX (6 screens), Long-gen UX/Latency |
+| 20 | low | Observability extensions (trait/character/leak/UX-latency/eval metrics) |
+
+> Per-phase proposals required (constitution §3). Priority enum TBD.

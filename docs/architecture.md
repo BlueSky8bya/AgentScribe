@@ -1,51 +1,45 @@
-<!-- [PROPOSAL: docs/proposals/LATEST_PROPOSAL.md §3] Foundation Bootstrap v001 stub -->
-# docs/architecture.md — System Architecture
+<!-- [PROPOSAL: docs/proposals/archive/2026-06-08/proposal_pipeline_foundation_v001.md] Pipeline Foundation v001 (approved) -->
+# Architecture — Immersion-Preserving Long-form Generation Pipeline
 
-> AgentScribe 전체 구조·파이프라인·데이터 흐름의 단일 출처.
-> STUB: 폴더 트리와 모듈 경계는 구현 시작 시 확정.
+> Single source for structure, pipeline, and data flow. Agent-facing: concise English.
+> Full approved design (Korean, with rationale): `docs/proposals/archive/2026-06-08/proposal_pipeline_foundation_v001.md`.
 
-## 스택
+## Stack
 
-| 레이어 | 기술 | 상태 |
+| Layer | Tech | Status |
 |---|---|---|
-| Frontend / Orchestration | Vite + TypeScript | PENDING |
-| QA Engine | Python (DSPy 여부 PENDING) | PENDING |
-| Shared State | `.md` / `.json` (Blackboard) | 골격 존재 |
+| Frontend / Orchestration | Vite + TypeScript | Phase 1 |
+| QA / Gates | server-side (lang TBD) | deferred |
+| Shared state | `.md` / `.json` (Blackboard), DB later | Phase 1 files; PostgreSQL deferred |
 
-## 4-에이전트 파이프라인 (텍스트 다이어그램)
-
-```text
-        ┌──────────┐
-        │ Director │  배정 / 진행도 / 백로그 검토
-        └────┬─────┘
-             │ assigns
-   ┌─────────┼──────────┐
-   ▼         ▼          ▼
-┌────────┐ ┌────────┐ ┌────────┐
-│Planner │ │Writer  │ │  QA    │
-│설정생성│→│집필    │→│모순검수│
-└───┬────┘ └───┬────┘ └───┬────┘
-    │ writes   │ reads    │ cross-checks
-    ▼          ▼          ▼
-   world_bible.json  /  state.md   (Blackboard)
-```
-
-## 데이터 흐름
-
-1. Planner → `world_bible.json`에 설정/상태 기록.
-2. Writer → `world_bible` 제약 안에서 본문 생성 (설정 창조 금지).
-3. QA → 생성 텍스트를 `world_bible` 상태값과 교차검증 → 모순 시 Writer 반려.
-4. 모든 단계 → `state.md` 갱신.
-
-> STUB: 폴더 트리, 빌드 산출물 경로, 에이전트 실행 진입점은 PENDING.
-
-## 폴더 트리 (현재 / 목표)
+## End-to-end pipeline
 
 ```text
-docs/        거버넌스·상태·설정 문서
-src/
-  agents/    director, planner, writer (skill .md 골격만)
-  python_engine/qa/  QA 스킬 .md 골격만, 구현 PENDING
+World Seed → Authorial Intent Bible → Narrative Shape Mode
+  → Craft Trait Selection (stub/direction in Phase 1)
+  → Editorial Room / Preflight (Theme Ledger, Series Blueprint, Character Bible/Cast/
+       Relationship/Reveal, Episode Cards, Masterpiece Candidate Gates, Locked Blueprint)
+  → [Episode loop: Director → Planner(+Retrieval) → Scene Board → Writer
+       → Creative Review Room → Immersion Gates(10 axes) → NMK Commit]
+  → completion
 ```
+Order is enforced: design → candidate gates → lock → only then episode generation. Failed drafts are never committed (reject → 2 retries → Director repair plan → partial-failure stop).
 
-> STUB: `src/` 실제 소스 구조는 구현 제안서에서 확정.
+## Core agents (4)
+
+Director / Planner / Writer / QA are the only core agents. Critics, Chief Editor, Producer, and modules (Context Packager, Prompt Firewall, Retrieval, Memory Committer, Observability) are judge/operational roles or tools, promoted to standalone agents only later. Responsibility detail: `docs/agents.md` (RACI).
+
+## Narrative Memory Kernel (NMK, 7 components)
+
+Canonical Store / Entity State Store / Event Ledger (append-only, no delete) / Rolling·Arc Summary / Retrieval Index / Episode Contract (derived) / Immersion Gates. Sources of truth: Canonical, Entity State, Event Ledger only. See `docs/schemas.md`.
+
+## Information separation
+
+Prompt Firewall: Writer receives only Episode Contract `allowed_*` + `public_summary`. `private_backstory`/`secrets`/`hidden_truth`/`forbidden_*` are redacted (id-level log). This is a Phase-1 hard rule even before full Character Bible exists.
+
+## Phase roadmap (MVP cut)
+
+- **Phase 1 (MVP)**: Seed + Intent + Shape + basic Blueprint/Episode Card storage. MVP schemas only (`docs/schemas.md`). Craft Trait / Character Firewall detail / Creative Review / Reader Probe = direction only.
+- Phase 2+: Preflight rooms, Character/Cast/Firewall detail, gates 2/3-tier, NMK full, Scale Mode, operational architecture (eval/routing/DB/UI/latency).
+
+Each phase ships under its own proposal (DOC BEFORE CODE). Folder layout: `src/agents/{director,planner,writer}`, `src/python_engine/qa`, `src/ui` (Phase 1), `docs/`.

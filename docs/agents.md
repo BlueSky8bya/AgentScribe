@@ -1,19 +1,31 @@
-<!-- [PROPOSAL: docs/proposals/LATEST_PROPOSAL.md §3] Foundation Bootstrap v001 stub -->
-# docs/agents.md — Agent Overview
+<!-- [PROPOSAL: docs/proposals/archive/2026-06-08/proposal_pipeline_foundation_v001.md] Pipeline Foundation v001 (approved) -->
+# Agents — Roles & Responsibility (RACI)
 
-> 4역할 개요. 상세 스킬은 각 skill 문서로 라우팅.
+> 4 core agents only. Critics/Chief Editor/Producer are judge/operational roles, not core agents.
+> Full design: archived proposal §10.5.1. Detail per skill doc.
 
-| 역할 | 책임 | 스킬 문서 | 상태 |
-|---|---|---|---|
-| Director | 배정·진행도·백로그 검토 | `src/agents/director/director_skill.md` | STUB |
-| Planner | 플롯·설정·세계관 상태 생성 | `src/agents/planner/planner_skill.md` | STUB |
-| Writer | 제약 내 본문 집필 | `src/agents/writer/writer_skill.md` | STUB |
-| QA | 모순·품질·일관성 검수 | `src/python_engine/qa/qa_skill.md` | STUB |
+## Core agents (Responsible)
 
-## 핵심 원칙
+| Agent | Responsibility | Skill doc |
+|---|---|---|
+| Director | Accountable owner: routing, episode goals, Scale, repair plan, partial-failure decision | `src/agents/director/director_skill.md` |
+| Planner | Design, retrieval, state assembly, Character Bible/Cast/Relationship/Reveal, Episode Contract prep | `src/agents/planner/planner_skill.md` |
+| Writer | Prose only. No design change. Uses only Prompt-Firewall-passed info | `src/agents/writer/writer_skill.md` |
+| QA | Gates, Canary, Reader Probe, schema checks, judge orchestration, NMK-commit approval | `src/python_engine/qa/qa_skill.md` |
 
-- Writer는 설정을 임의 창조 못 함 — `world_bible` 제약만 사용.
-- QA는 `world_bible` 상태값과 텍스트를 교차검증, 모순 시 반려.
-- 모든 역할은 작업 후 `state.md` 갱신.
+## Roles (not core agents)
 
-> STUB: 각 역할 입출력 계약은 해당 skill 문서 + `docs/schemas.md`에서 확정.
+- Critics (Continuity / Emotion / Scene / Theme / Surprise / Language): judge roles under QA / Chief Editor.
+- Chief Editor: final-judgment role (QA line).
+- Producer: cost/speed/budget role under Director.
+- Modules (Context Packager, Prompt Firewall, Retrieval, Scene Board Builder, Schema Canary, Reader Probe, Memory Committer, Observability Reporter): deterministic tools first; promote to standalone agents only when call volume / complexity / fault-isolation demands it.
+
+## RACI
+
+Process-level Responsible/Accountable/Consulted/Informed/Output is the authority for who-does-what. See archived proposal §10.5.1. On conflict with high-level summaries, RACI wins.
+
+## Core principles
+
+- Writer must not invent core settings (Locked Blueprint); micro-detail (dialogue, sensory, props, non-core action) allowed if non-conflicting.
+- QA cross-checks prose against NMK; reject on contradiction. Same reject 2× → Director escalation.
+- Every step updates `state.md`.

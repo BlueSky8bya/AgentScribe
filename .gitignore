@@ -21,6 +21,9 @@ dist-ssr
 .env
 .env.*
 
+# Phase 1 runtime store reservation (no real file writes yet)
+data/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

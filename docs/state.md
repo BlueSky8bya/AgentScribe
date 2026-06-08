@@ -1,25 +1,35 @@
-<!-- [PROPOSAL: docs/proposals/LATEST_PROPOSAL.md §3] Foundation Bootstrap v001 stub -->
-# docs/state.md — Runtime State (Blackboard)
+<!-- [PROPOSAL: docs/proposals/archive/2026-06-08/proposal_pipeline_foundation_v001.md] Pipeline Foundation v001 (approved) -->
+# Runtime State (Blackboard)
 
-> 세션 시작 시 가장 먼저 읽는 런타임 상태판. 에이전트는 작업 후 이 표를 갱신한다.
-> STUB: 실제 상태 갱신 규칙은 `docs/agent_interaction_protocol.md` 확정 후 채움.
+> Read first at session start. Agents update after work.
 
-## 현재 상태
+## Current state
 
-| 항목 | 값 |
+| Field | Value |
 |---|---|
-| current_phase | PENDING |
-| active_task | PENDING |
-| director_status | PENDING |
-| planner_status | PENDING |
-| writer_status | PENDING |
-| qa_status | PENDING |
-| last_updated | PENDING |
+| current_phase | Phase 1 (MVP) — foundation data & seed IMPLEMENTED |
+| design_status | Pipeline Foundation v001 APPROVED 2026-06-08, archived |
+| phase1_status | APPROVED + implemented 2026-06-08 (build/lint/test pass) |
+| active_task | none (Phase 2 needs its own proposal) |
+| director_status | idle |
+| planner_status | idle |
+| writer_status | idle |
+| qa_status | idle |
+| last_updated | 2026-06-08 |
 
-## 활성 태스크 큐
+## Phase 1 delivered
 
-| 우선순위 | 태스크 | 담당 | 상태 |
-|---|---|---|---|
-| — | PENDING | — | PENDING |
+- `src/core/schemas/*` (9 zod schemas), `store/` (StoreAdapter + LocalStore), `firewall/contextPackager`, `preflight/basicBlueprint`, `obs/span`, `createWork`.
+- `src/ui/NewWorkWizard` (4-step) mounted in `App.tsx`.
+- `tests/` (5 tests pass): schema valid/invalid, save→load round-trip, firewall private-exclusion.
+- `npm test` / `npm run build` / `npm run lint` all green.
 
-> STUB: 상태 enum(예: idle/working/blocked/done)은 schemas.md에서 정의 예정.
+## Phase 1 scope (approved)
+
+Seed + Authorial Intent + Narrative Shape + basic Blueprint/Episode Card storage; MVP-required schemas only (`docs/schemas.md`); Prompt Firewall "no private/secret to Writer" rule from day one. Craft Trait / Character-Cast detail / Creative Review / Reader Probe / operational architecture = direction only (see `docs/backlog.md`).
+
+## Next
+
+Phase 1 implementation needs its own proposal (DOC BEFORE CODE, constitution §3).
+
+> State enum (idle/working/blocked/done) to be formalized in schemas.

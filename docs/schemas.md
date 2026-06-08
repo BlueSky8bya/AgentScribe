@@ -1,33 +1,36 @@
-<!-- [PROPOSAL: docs/proposals/LATEST_PROPOSAL.md §3] Foundation Bootstrap v001 stub -->
-# docs/schemas.md — Data Schemas
+<!-- [PROPOSAL: docs/proposals/archive/2026-06-08/proposal_pipeline_foundation_v001.md] Pipeline Foundation v001 (approved) -->
+# Data Schemas
 
-> world_bible / state / 메시지 JSON 구조 정의. QA 모순검출의 기준.
-> STUB: 필드 타입·검증 규칙은 구현 시 확정.
+> All schemas freeze in `docs/schemas.md` before code. Agent-facing: concise English.
+> Full field detail: archived proposal §3.4b, §3.5, §3.6, §5, §6, §10.2.
 
-## world_bible.json
+## MVP schemas (Phase 1 — IMPLEMENTED, zod, `src/core/schemas/`)
 
-| 필드 | 타입 | 설명 | 상태 |
-|---|---|---|---|
-| schema_version | string | 스키마 버전 | stub |
-| characters[] | object[] | 인물 + 상태 플래그 (예: `arm_status`) | PENDING |
-| locations[] | object[] | 장소 | PENDING |
-| timeline[] | object[] | 사건 순서 | PENDING |
-| state_flags{} | object | 전역 상태 플래그 | PENDING |
+9 schemas (8 MVP-required + Character split into Public/Private = firewall boundary):
 
-캐릭터 객체 (초안):
+- `SeedSettings` (seedSettings.ts) — Canonical seed; work_id, genre, mood, background, pov, scale, target_episodes, episode_length.
+- `AuthorialIntent` (authorialIntent.ts) — lasting_feeling, why_this_story, desired_emotion, avoid_cliches, final_image, negative_space.
+- `NarrativeShape` (narrativeShape.ts) — mode (5 shapes).
+- `CharacterPublicSeed` (character.ts) — Writer-safe: character_id, name, role, one_line.
+- `CharacterPrivate` (character.ts) — **firewalled**: private_backstory, secrets. Never to Writer.
+- `BasicSeriesBlueprint` (seriesBlueprint.ts) — deterministic skeleton; shape_ref, arc_outline.
+- `BasicEpisodeCard` (episodeCard.ts) — stub; episode_id, index, status="stub".
+- `TelemetrySpan` (telemetry.ts) — trace_id/span_id/parent_span_id, run_id, step, duration_ms — **never logs keys**.
+- `Fixture` (fixture.ts) — golden fixture format.
+- `WorkRecord` (index.ts) — assembled work: `public` group (Writer-safe) + `private` group (firewalled).
 
-```json
-{
-  "id": "PENDING",
-  "name": "PENDING",
-  "status": { "arm_status": "PENDING" }
-}
-```
+## Deferred stub schemas (direction only; freeze in their Phase)
 
-## state.md (구조화 시)
+`craft_trait_schema`, `craft_selection_schema`, `craft_decision_log_schema`, `character_bible_schema`, `cast_registry_schema`, `relationship_map_schema`, `character_reveal_schedule_schema`, `character_creation_gate_schema`, `cast_promotion_gate_schema`, `prompt_firewall_schema`, `character_info_grade/lifecycle_schema`, `cross_link/schema_canary`, `reader_probe_schema`, `subjective_evaluation_rubric_schema`, `judge_calibration_schema`, `model_routing_schema`, `llm_call_policy_schema`, `database_storage_schema`, `ui_screen_skeleton_schema`, `ui_latency_metrics_schema`, `character/cast_observability_schema`.
 
-> STUB: state를 .md 표에서 .json으로 승격할지 PENDING.
+## NMK truth-source schemas (skeleton)
 
-## 메시지 스키마
+- **world_bible.json** → Canonical (immutable, agent-no-edit) + Entity State (current: location/alive/relationships) + Inferred (confidence+source).
+- **Event Ledger** — append-only; fields: event_id, episode, subject/predicate/object, summary, provenance, source_text, schema_version, confidence; correction via `supersedes`/`superseded_by`/`status`; temporal (before/after) + knowledge (known_by/audience_knows/info_status).
+- **Episode Contract** — derived per episode; carries `allowed_character_reveals`, `forbidden_character_reveals`, `active_relationship_beats`, `allowed_new_characters`, `reader_experience_goals`.
 
-`docs/agent_interaction_protocol.md` 참조. type enum 확정 PENDING.
+## Storage
+
+Phase 1: `.md`/`.json` + optional SQLite. Production (deferred): PostgreSQL JSONB+GIN, pgvector for Retrieval Index, append-only `events`, snapshot `entity_states`, draft text NOT stored (hash/snippet/ref only). Table list: archived proposal §10.5.6.
+
+> Schema changes carry migration rules + `schema_version`.

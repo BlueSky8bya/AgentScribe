@@ -1,26 +1,34 @@
-<!-- [PROPOSAL: docs/proposals/LATEST_PROPOSAL.md §3] Foundation Bootstrap v001 stub -->
-# docs/testing.md — Quality Gates
+<!-- [PROPOSAL: docs/proposals/archive/2026-06-08/proposal_pipeline_foundation_v001.md] Pipeline Foundation v001 (approved) -->
+# Quality Gates & Testing
 
-> 통과 기준 정의. 코드 작성 전·검수 시 적용.
-> STUB: 실제 테스트 명령·CI는 PENDING.
+> Gate criteria + fixtures. No gate is implemented without fixtures first.
+> Full detail: archived proposal §6, §10.1, §10.5.3-4.
 
-## Gate 1 — 상태 동기화
+## Constitution gates (always)
 
-코드 변경 시 관련 설계 문서(`.md`)도 같은 변경에서 갱신되었는가? (DOC BEFORE CODE)
+- **Gate 1 (state sync)**: code change ships with its design `.md` update + traceability comment.
+- **Gate 2 (logic)**: QA cross-checks prose against NMK; 0 contradictions.
 
-## Gate 2 — 논리성 검증
+## Immersion Gates — 10 axes (cascade: deterministic → cheap model → expensive judge)
 
-QA 검수가 이전 장면의 상태값(`world_bible`)을 참조해 현재 텍스트 모순을 잡아내는가?
+1 factual/world · 2 entity-state · 3 plot/repetition · 4 emotional continuity · 5 author-intent/seed · 6 genre/style · 7 language naturalness (Korean-primary) · 8 scene vividness (anti-summary) · 9 pacing · 10 character & exposition control (reveal_leak, cast_sprawl, unauthorized_major, relationship_jump, exposition_dump, species_rule_violation).
 
-| 게이트 | 검증 방법 | 상태 |
-|---|---|---|
-| Gate 1 | 문서-코드 동반 변경 + 추적 주석 존재 | 수동, PENDING 자동화 |
-| Gate 2 | QA 교차검증 결과 모순 0 | PENDING (QA 엔진 미구현) |
+Severity: fatal (immediate reject) / major (reject) / minor (warn). Failure policy: reject never commits → 2 retries → Director repair plan → partial-failure report stop.
 
-## 테스트 명령
+## Golden Fixtures / Canary (build before implementing gates)
+
+- Negative (must catch) + Positive (good scenes must pass) fixtures per failure type.
+- **Retrieval Canary**: verify the *right memory was retrieved*, not just final prose.
+- Character/Cast, Prompt Firewall, Schema Canary (orphan reveal/relationship), access-separation fixtures.
+
+## Subjective evaluation (deferred detail)
+
+Rubric 1–5 with rationale + trace_id; never trust single judge; high-risk uses ≥2 judges / pairwise + shuffle (position bias) + verbosity penalty; thresholds calibrated against fixtures + human spot-check (G-Eval / MT-Bench / Prometheus direction). See proposal §10.5.3-4.
+
+## Test commands
 
 ```text
-PENDING: vitest / pytest 설정 후 기재
+PENDING: vitest / pytest after Phase 1 scaffolding.
 ```
 
-> STUB: 테스트 보고서는 `docs/test_reports/YYYY-MM-DD/`에 보관.
+> Reports: `docs/test_reports/YYYY-MM-DD/`.
