@@ -220,6 +220,7 @@ Remember:
 - Put critical rules at the top and bottom of agent-facing prompts and routed instructions.
 - Use `LATEST_PROPOSAL.md` for the current approval desk, but archive every meaningful proposal by date and version.
 - Code changed by a proposal must carry a traceability comment pointing back to it (see §3.1). No orphan tags.
+- Approved code changes must pass build, lint, and tests, include §3.1 traceability comments, then be committed and pushed when runbook safety checks pass. Full checklist: `docs/runbook.md`.
 - If a Korean file is garbled, fix or verify UTF-8 before reasoning from it.
 - Do not change project files before approval unless a limited exception applies.
 - If the task can drift, route it. If the rule can change, do not put it here.
