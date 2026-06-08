@@ -1,4 +1,4 @@
-<!-- [PROPOSAL: docs/proposals/archive/2026-06-08/proposal_pipeline_foundation_v001.md] Pipeline Foundation v001 (approved) -->
+<!-- [PROPOSAL: docs/proposals/archive/2026-06-08/proposal_phase2_editorial_room_v001.md] Phase 2 (approved + implemented) -->
 # Runtime State (Blackboard)
 
 > Read first at session start. Agents update after work.
@@ -7,29 +7,30 @@
 
 | Field | Value |
 |---|---|
-| current_phase | Phase 1 (MVP) — foundation data & seed IMPLEMENTED |
+| current_phase | Phase 2 — Editorial Room / Preflight IMPLEMENTED |
 | design_status | Pipeline Foundation v001 APPROVED 2026-06-08, archived |
-| phase1_status | APPROVED + implemented 2026-06-08 (build/lint/test pass) |
-| active_task | none (Phase 2 needs its own proposal) |
+| phase1_status | done 2026-06-08 (foundation data and seed) |
+| phase2_status | done 2026-06-08 (design assets, deterministic gates/canary, lock, doc-lang guard) |
+| active_task | none (Phase 3 needs its own proposal) |
 | director_status | idle |
 | planner_status | idle |
 | writer_status | idle |
-| qa_status | idle |
 | last_updated | 2026-06-08 |
 
-## Phase 1 delivered
+## Phase 2 delivered
 
-- `src/core/schemas/*` (9 zod schemas), `store/` (StoreAdapter + LocalStore), `firewall/contextPackager`, `preflight/basicBlueprint`, `obs/span`, `createWork`.
-- `src/ui/NewWorkWizard` (4-step) mounted in `App.tsx`.
-- `tests/` (5 tests pass): schema valid/invalid, save→load round-trip, firewall private-exclusion.
-- `npm test` / `npm run build` / `npm run lint` all green.
+- Schemas: CharacterBible, CastEntry, Relationship, RevealItem, ThemeLedger, Foreshadow, CraftSelection (stub); SeriesBlueprint/EpisodeCard extended; WorkRecord 0.2.0 + `migrateWork` (0.1.0 -> 0.2.0).
+- Preflight (deterministic, no LLM): `candidateGates`, `schemaCanary`, `lockBlueprint` (Hard/Soft/Fluid; pure warns need acknowledge), `revisionImpact`; `editorialRoom` orchestration.
+- UI: `PreflightRoom` (gate results, acknowledge, lock button); Wizard -> Preflight Room routing.
+- Guard: `scripts/check-doc-lang.mjs` wired into `npm run lint` (agent-facing files must be English).
+- Tests: 21 pass. `npm test` / `npm run build` / `npm run lint` all green.
 
-## Phase 1 scope (approved)
+## Out of scope (deferred)
 
-Seed + Authorial Intent + Narrative Shape + basic Blueprint/Episode Card storage; MVP-required schemas only (`docs/schemas.md`); Prompt Firewall "no private/secret to Writer" rule from day one. Craft Trait / Character-Cast detail / Creative Review / Reader Probe / operational architecture = direction only (see `docs/backlog.md`).
+LLM gates (Phase 5 semantic axes), Scene Board (Phase 4), episode generation, Creative Review, Cast Promotion automation. See `docs/backlog.md`.
 
 ## Next
 
-Phase 1 implementation needs its own proposal (DOC BEFORE CODE, constitution §3).
+Phase 3 (Director + episode loop + Creation/Promotion Gate + model_router + firewall routing) needs its own proposal (DOC BEFORE CODE, constitution section 3).
 
 > State enum (idle/working/blocked/done) to be formalized in schemas.

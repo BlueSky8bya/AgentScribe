@@ -1,6 +1,7 @@
 // [PROPOSAL: docs/proposals/LATEST_PROPOSAL.md §6] Phase 1 create-work orchestration
 import {
   WorkRecord,
+  SCHEMA_VERSION,
   type SeedSettings,
   type AuthorialIntent,
   type NarrativeShape,
@@ -26,7 +27,7 @@ export async function createWork(
   const { blueprint, episode_cards } = buildBasicBlueprint(input.seed, input.shape);
 
   const work = WorkRecord.parse({
-    schema_version: "0.1.0",
+    schema_version: SCHEMA_VERSION,
     public: {
       seed: input.seed,
       intent: input.intent,

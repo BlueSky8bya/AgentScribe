@@ -1,6 +1,6 @@
 // [PROPOSAL: docs/proposals/LATEST_PROPOSAL.md §3] Phase 1 localStorage StoreAdapter
 // Stores public/private groups under keys mirroring data/works/<id>/{public,private}.json.
-import { WorkRecord } from "../schemas/index.js";
+import { WorkRecord, migrateWork } from "../schemas/index.js";
 import { workPaths, type StoreAdapter } from "./StoreAdapter.js";
 
 /** Minimal key/value backend. Defaults to browser localStorage; injectable for tests. */
@@ -58,7 +58,8 @@ export class LocalStore implements StoreAdapter {
     if (!pub || !priv) return null;
     const pubObj = JSON.parse(pub) as Record<string, unknown>;
     const { schema_version, ...publicGroup } = pubObj;
-    return WorkRecord.parse({
+    // migrateWork upgrades older stored versions (e.g. 0.1.0) before validation.
+    return migrateWork({
       schema_version,
       public: publicGroup,
       private: JSON.parse(priv),

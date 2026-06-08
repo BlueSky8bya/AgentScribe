@@ -19,6 +19,21 @@
 - `Fixture` (fixture.ts) — golden fixture format.
 - `WorkRecord` (index.ts) — assembled work: `public` group (Writer-safe) + `private` group (firewalled).
 
+## Phase 2 schemas (IMPLEMENTED, `src/core/schemas/`)
+
+Editorial Room design assets + lock. `WorkRecord` bumped to `0.2.0` (back-compatible; `migrateWork()` upgrades 0.1.0).
+
+- `CharacterBible` (characterBible.ts) — public group: importance_level, species_or_type, public_summary, species_rules.
+- `CastEntry` (castRegistry.ts) — importance, introduced_by, allowed_scope, can_affect_main_plot, promotion_status.
+- `Relationship` (relationshipMap.ts) — from/to, relationship_type, planned_turns.
+- `RevealItem` (revealSchedule.ts) — allowed_episode_range, reveal_mode, forbidden_before, payoff_episode.
+- `ThemeLedger` (themeLedger.ts) — central_question, opposing_values, episode_pressure.
+- `Foreshadow` (foreshadowing.ts) — plant_episode, payoff_episode (missing => orphan).
+- `CraftSelection` (craftSelection.ts) — STUB; selected/rejected trait ids only (no author imitation).
+- `LockState` + extended `SeriesBlueprint`/`BasicEpisodeCard` (lock zones Hard/Soft/Fluid; reveal/relationship refs).
+
+Deterministic preflight (`src/core/preflight/`): `candidateGates` (severity fatal/reject/blocking_warn/warn/skip), `schemaCanary` (orphan/missing/duplicate), `lockBlueprint` (refuse on reject/blocking_warn/canary-error; pure warns need acknowledge), `revisionImpact`.
+
 ## Deferred stub schemas (direction only; freeze in their Phase)
 
 `craft_trait_schema`, `craft_selection_schema`, `craft_decision_log_schema`, `character_bible_schema`, `cast_registry_schema`, `relationship_map_schema`, `character_reveal_schedule_schema`, `character_creation_gate_schema`, `cast_promotion_gate_schema`, `prompt_firewall_schema`, `character_info_grade/lifecycle_schema`, `cross_link/schema_canary`, `reader_probe_schema`, `subjective_evaluation_rubric_schema`, `judge_calibration_schema`, `model_routing_schema`, `llm_call_policy_schema`, `database_storage_schema`, `ui_screen_skeleton_schema`, `ui_latency_metrics_schema`, `character/cast_observability_schema`.

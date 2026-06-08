@@ -8,6 +8,7 @@ import {
   CharacterPublicSeed,
   CharacterPrivate,
   type ShapeMode,
+  type WorkRecord,
 } from "../core/schemas/index.js";
 import { createWork } from "../core/createWork.js";
 import { LocalStore } from "../core/store/localStore.js";
@@ -30,7 +31,7 @@ const SHAPES: ShapeMode[] = [
   "slice_of_life_accumulation",
 ];
 
-export function NewWorkWizard() {
+export function NewWorkWizard({ onComplete }: { onComplete?: (work: WorkRecord) => void }) {
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -113,6 +114,7 @@ export function NewWorkWizard() {
         store,
       );
       setSavedId(work.public.seed.work_id);
+      onComplete?.(work);
     } catch (e) {
       if (e instanceof z.ZodError) {
         setError("입력 검증 실패: " + e.issues.map((i) => i.path.join(".") + " " + i.message).join("; "));
