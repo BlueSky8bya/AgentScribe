@@ -1,41 +1,42 @@
 // ===========================================================================
 // [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3b_llm_expander_v001.md] file created under this proposal
-// Server-only routing. Provider is fixed (OpenAI, selected at approval). Inside
-// that provider, budget/effective_scale/risk pick a model tier. The API key is
-// NOT part of the decision — it is read from env inside the expander, never here.
+// [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3c1_multiprovider_foundation_v001.md section 8] provider-parameterized + matrix allowlist
+// Server-only routing. budget/effective_scale/risk pick a tier; the (provider, tier)
+// pair resolves to a concrete model via the Capability Matrix allowlist — the client
+// can NEVER name a model directly. The API key is not part of the decision.
 // ===========================================================================
 import type { ScaleMode } from "../src/core/schemas/seedSettings.js";
+import { getEntry, type ProviderId, type ModelTier } from "./providers/capabilityMatrix.js";
 
-export type ModelTier = "cheap" | "quality";
+export type { ModelTier };
 
 export interface RouteDecision {
-  provider: "openai";
+  provider: ProviderId;
   model: string;
   tier: ModelTier;
 }
 
 export interface RouteInput {
+  provider?: ProviderId;
   effective_scale: ScaleMode;
   risk_level?: "low" | "high";
   budget_class?: "save" | "normal";
   quality_pref?: "high" | "balanced";
 }
 
-// Verified OpenAI model ids (see providerPricing.ts, snapshot 2026-06-09).
-const CHEAP_MODEL = "gpt-5.4-mini";
-const QUALITY_MODEL = "gpt-5.4";
-
 function decideTier(input: RouteInput): ModelTier {
-  // Cost savings wins when explicitly requested.
   if (input.budget_class === "save") return "cheap";
   if (input.quality_pref === "high") return "quality";
   if (input.risk_level === "high") return "quality";
-  // Long / series design expansion is higher stakes -> quality.
   if (input.effective_scale === "long" || input.effective_scale === "series") return "quality";
   return "cheap";
 }
 
+/** Resolve to a concrete model via the matrix allowlist. Throws on unknown provider/tier. */
 export function route(input: RouteInput): RouteDecision {
+  const provider: ProviderId = input.provider ?? "openai";
   const tier = decideTier(input);
-  return { provider: "openai", model: tier === "quality" ? QUALITY_MODEL : CHEAP_MODEL, tier };
+  const entry = getEntry(provider, tier);
+  if (!entry) throw new Error(`no_model_for_${provider}_${tier}`);
+  return { provider, model: entry.model_id, tier };
 }

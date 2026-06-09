@@ -63,6 +63,19 @@ Generation caps (server/llmExpander.ts), per `effective_scale`: short 2-4 chars 
 
 Frontend: `src/core/expand/remoteExpander.ts` (`RemoteExpander implements ExpanderAdapter`, async; calls `/api/expand`, falls back to `DeterministicExpander` on any failure and records `fallback_used`). UI: `ExternalSendNotice`, `ExpandProgress`, `WorkCostPanel` ("this work's AI usage").
 
+## Phase 3C-1 (IMPLEMENTED) — multi-provider foundation (mock)
+
+No WorkRecord change. Adds server-only provider types + extends cost/pricing.
+
+- `CapabilityEntry` (server/providers/capabilityMatrix.ts) — single source of truth per provider/model/tier: `provider_id`, `model_id`, `tier(cheap|quality)`, `adapter_mode(live|mock|disabled)`, `can_generate_real_output`, `supports_json_mode/json_schema/tool_use`, `usage_token_fields`, `cached_token_supported`, `reasoning_token_supported`, `max_input_tokens`, `max_output_tokens`, `timeout_ms`, `retry_policy`, `price_snapshot_date`, `source_url`, `status(disabled|experimental|beta|stable)`. 3C-1: openai=live/stable, others=mock/experimental/can_generate_real_output=false.
+- `ProviderSummary` (server/providers/capabilityMatrix.ts) — `/api/providers` item: `{ id, status, adapter_mode, can_generate_real_output, available, tiers, note? }`. `available` = env key present (boolean only; never the key).
+- `ProviderAdapter` (server/providers/types.ts) — `{ id; generate({system,user}, model): Promise<{ rawJson, usage }> }`. Impls: `openaiAdapter` (live), `mockAdapter` (canned LlmDraft). Registry `resolveAdapter(provider)`.
+- `PricingEntry` extended (server/pricing/providerPricing.ts) — adds `price_status(verified|placeholder)`, `usable_for_cost_estimate`. Placeholder prices yield zero cost and are flagged.
+- `CostLedgerEntry` extended (src/core/expand/remoteTypes.ts) — adds `price_status: "verified"|"placeholder"|"n/a"`. `WorkCostPanel` shows a cost-pending label when not verified.
+- Canary (server/canary/): `seedBank.ts` (versioned `CANARY_VERSION` + Korean `CanaryFixture[]` covering genre/secret/non-human/many-relations/foreshadow/short-long-series), `runner.ts` (`runCanaryCase`/`aggregateCanary` → metrics incl. `private_secret_leak_count`, cap-compliance, `canary_version`, `status_before/after`), `pairwise.ts` (order-swap + length-bias-guard record format; human review notes). Harness validated with mock in 3C-1.
+
+Router: `modelRouter.route({provider, ...})` resolves `{provider, model, tier, entry}` from the matrix allowlist; unknown/disabled tier throws. `/api/expand` rejects an explicitly-chosen unavailable provider with `provider_unavailable` (no silent OpenAI swap).
+
 ## Deferred stub schemas (direction only; freeze in their Phase)
 
 `craft_trait_schema`, `craft_selection_schema`, `craft_decision_log_schema`, `character_bible_schema`, `cast_registry_schema`, `relationship_map_schema`, `character_reveal_schedule_schema`, `character_creation_gate_schema`, `cast_promotion_gate_schema`, `prompt_firewall_schema`, `character_info_grade/lifecycle_schema`, `cross_link/schema_canary`, `reader_probe_schema`, `subjective_evaluation_rubric_schema`, `judge_calibration_schema`, `model_routing_schema`, `llm_call_policy_schema`, `database_storage_schema`, `ui_screen_skeleton_schema`, `ui_latency_metrics_schema`, `character/cast_observability_schema`.

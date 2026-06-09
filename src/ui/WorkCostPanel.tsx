@@ -10,12 +10,17 @@ export function WorkCostPanel({ cost }: { cost: CostLedgerEntry | null }) {
   const modelLabel = cost.fallback_used
     ? "규칙 기반(외부 AI 미사용)"
     : `${cost.provider} / ${cost.model}`;
+  // [PROPOSAL: docs/.../proposal_phase3c1_multiprovider_foundation_v001.md section 7.3] placeholder price -> "비용 계산 준비중"
+  const costLabel =
+    cost.price_status === "verified"
+      ? `약 $${cost.estimated_cost_usd.toFixed(2)}`
+      : "비용 계산 준비중 (가격 확인 전)";
   return (
     <div style={{ background: "#f7f7f0", padding: 10, borderRadius: 6, margin: "8px 0" }}>
       <strong>이 작품의 AI 사용량 (설계 초안)</strong>
       <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 14 }}>
         <li>
-          설계 초안 생성: {cost.total_tokens.toLocaleString()} tokens / 약 ${cost.estimated_cost_usd.toFixed(2)}
+          설계 초안 생성: {cost.total_tokens.toLocaleString()} tokens / {costLabel}
         </li>
         <li>사용 모델: {modelLabel}</li>
         <li>fallback: {cost.fallback_used ? `사용됨 (${cost.fallback_reason ?? "-"})` : "없음"}</li>

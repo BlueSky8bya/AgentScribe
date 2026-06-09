@@ -1,0 +1,131 @@
+// ===========================================================================
+// [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3c1_multiprovider_foundation_v001.md section 4] file created under this proposal
+// Contract Canary runner. Runs the seed bank through an expander, checks schema
+// validity, cap-compliance, and private-secret leakage, then aggregates rates.
+// Thresholds are AgentScribe INTERNAL operating bars, NOT an industry standard.
+// 3C-1 validates the harness with the mock adapter; 3C-2 runs live providers.
+// ===========================================================================
+import { SeedSettings, CharacterPublicSeed } from "../../src/core/schemas/index.js";
+import type { ExpandInput, ExpansionResult } from "../../src/core/expand/ExpanderAdapter.js";
+import type { ProviderId, ProviderStatus, AdapterMode } from "../providers/capabilityMatrix.js";
+import { CANARY_SEED_BANK, CANARY_VERSION, type CanaryFixture } from "./seedBank.js";
+
+const CAPS: Record<string, { rel: number; fs: number; chars: number }> = {
+  short: { rel: 4, fs: 3, chars: 4 },
+  medium: { rel: 8, fs: 6, chars: 6 },
+  long: { rel: 15, fs: 12, chars: 10 },
+  series: { rel: 15, fs: 12, chars: 10 },
+};
+
+export function fixtureToInput(fx: CanaryFixture): ExpandInput {
+  const seed = SeedSettings.parse({
+    work_id: `canary_${fx.fixture_id}`, genre: fx.genre, mood: fx.mood, background: fx.background,
+    pov: "third_observer", scale: fx.scale, target_episodes: fx.target_episodes, episode_length: fx.episode_length,
+  });
+  const characters = fx.characters.map((c, i) =>
+    CharacterPublicSeed.parse({
+      character_id: `${seed.work_id}_char_${i + 1}`, name: c.name, role: c.role,
+      one_line: c.one_line, gender: c.gender ?? "unspecified", personality_brief: c.personality_brief ?? "",
+    }),
+  );
+  return { seed, characters, effective_scale: fx.scale };
+}
+
+export interface CanaryCaseResult {
+  fixture_id: string;
+  schema_ok: boolean;
+  json_parse_failed: boolean;
+  caps_ok: boolean;
+  secret_leak_count: number;
+}
+
+/** Count private secrets/backstory that leaked into the non-private (Writer-safe) output. */
+function detectSecretLeak(expansion: ExpansionResult): number {
+  const publicView = {
+    character_bibles: expansion.character_bibles,
+    cast_registry: expansion.cast_registry,
+    relationship_map: expansion.relationship_map,
+    theme_ledger: expansion.theme_ledger,
+    foreshadowing: expansion.foreshadowing,
+  };
+  const hay = JSON.stringify(publicView);
+  let leaks = 0;
+  for (const pc of expansion.private_characters) {
+    for (const s of pc.secrets) if (s && hay.includes(s)) leaks++;
+    if (pc.private_backstory && hay.includes(pc.private_backstory)) leaks++;
+  }
+  return leaks;
+}
+
+/** Run one fixture through an expander and check the contract. */
+export async function runCanaryCase(
+  fx: CanaryFixture,
+  expand: (input: ExpandInput) => Promise<ExpansionResult>,
+): Promise<CanaryCaseResult> {
+  const input = fixtureToInput(fx);
+  const cap = CAPS[fx.scale];
+  try {
+    const out = await expand(input);
+    const caps_ok = out.relationship_map.length <= cap.rel && out.foreshadowing.length <= cap.fs;
+    return {
+      fixture_id: fx.fixture_id, schema_ok: true, json_parse_failed: false,
+      caps_ok, secret_leak_count: detectSecretLeak(out),
+    };
+  } catch {
+    return { fixture_id: fx.fixture_id, schema_ok: false, json_parse_failed: true, caps_ok: false, secret_leak_count: 0 };
+  }
+}
+
+export interface CanaryReport {
+  canary_version: string;
+  provider_id: ProviderId;
+  model_id: string;
+  adapter_mode: AdapterMode;
+  status_before: ProviderStatus;
+  status_after: ProviderStatus;
+  case_count: number;
+  schema_success_rate: number;
+  json_parse_failure_rate: number;
+  cap_compliance_rate: number;
+  private_secret_leak_count: number;
+}
+
+export interface CanaryMeta {
+  provider_id: ProviderId;
+  model_id: string;
+  adapter_mode: AdapterMode;
+  status_before: ProviderStatus;
+}
+
+/** Aggregate case results into a report + derive status_after from internal bars. */
+export function aggregateCanary(results: CanaryCaseResult[], meta: CanaryMeta): CanaryReport {
+  const n = results.length || 1;
+  const schema_success_rate = results.filter((r) => r.schema_ok).length / n;
+  const json_parse_failure_rate = results.filter((r) => r.json_parse_failed).length / n;
+  const cap_compliance_rate = results.filter((r) => r.caps_ok).length / n;
+  const leaks = results.reduce((a, r) => a + r.secret_leak_count, 0);
+
+  // INTERNAL bars (not an industry standard): leak>0 -> disabled; >=95% schema -> stable candidate.
+  let status_after = meta.status_before;
+  if (leaks > 0) status_after = "disabled";
+  else if (meta.adapter_mode === "live" && schema_success_rate >= 0.95) status_after = "stable";
+
+  return {
+    canary_version: CANARY_VERSION,
+    provider_id: meta.provider_id, model_id: meta.model_id, adapter_mode: meta.adapter_mode,
+    status_before: meta.status_before, status_after,
+    case_count: results.length,
+    schema_success_rate, json_parse_failure_rate, cap_compliance_rate,
+    private_secret_leak_count: leaks,
+  };
+}
+
+/** Convenience: run the whole seed bank. */
+export async function runCanary(
+  expand: (input: ExpandInput) => Promise<ExpansionResult>,
+  meta: CanaryMeta,
+): Promise<CanaryReport> {
+  const results: CanaryCaseResult[] = [];
+  for (const fx of CANARY_SEED_BANK) results.push(await runCanaryCase(fx, expand));
+  return aggregateCanary(results, meta);
+}

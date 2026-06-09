@@ -44,6 +44,7 @@ Prompt Firewall: Writer receives only Episode Contract `allowed_*` + `public_sum
 - **Phase 2**: Editorial Room / Preflight, design assets, deterministic gates/canary, lock, doc-lang guard.
 - **Phase 3A**: Minimal seed + Scale Consistency Guard + rule-based `DeterministicExpander` (no LLM) + mixed-initiative review.
 - **Phase 3B**: LLM **design assistant** behind a Node backend. Swaps `DeterministicExpander` for an LLM expander; produces only design drafts (character/relationship/theme/foreshadow/arc), NOT episode prose (Writer = Phase 4).
+- **Phase 3C-1**: Multi-provider **foundation** — `ProviderAdapter` interface, Capability Matrix, `/api/providers`, provider/tier allowlist, key-availability, mock adapters, pricing extension (`price_status`), Contract Canary harness (mock). OpenAI stays the only `live` provider; Gemini/Claude/DeepSeek are `mock`/`experimental` (not user-selectable for real generation). Live rollout = Phase 3C-2.
 - Phase 4+: Writer episode generation, Creative Review, LLM semantic gates, NMK full, operational architecture (DB/UI/latency).
 
 Each phase ships under its own proposal (DOC BEFORE CODE). Folder layout: `src/agents/{director,planner,writer}`, `src/python_engine/qa`, `src/ui`, `src/core`, `server/` (Phase 3B backend), `docs/`.
@@ -61,6 +62,18 @@ Provider selected at approval: **GPT / OpenAI** (one provider implemented; Gemin
                     -> costLedger (per work_id tokens + cost; providerPricing table)
   response: { expansion, cost }   ;  on any failure the client falls back to DeterministicExpander
 ```
+
+### Phase 3C-1 — multi-provider foundation (mock)
+
+```text
+GET  /api/providers  -> [{ id, status, adapter_mode, can_generate_real_output, available, tiers }]  (NEVER keys)
+POST /api/expand     -> options.provider/quality_pref (enum) -> modelRouter resolves via Capability Matrix allowlist
+```
+- Capability Matrix (`server/providers/capabilityMatrix.ts`) is the single source of truth for provider/model/tier + `adapter_mode (live|mock|disabled)`, `can_generate_real_output`, `status (disabled|experimental|beta|stable)`, structured-output/token/timeout capabilities, pricing pointer. UI labels and router allowlist both read it (same meaning).
+- Provider adapters (`server/providers/`): `ProviderAdapter.generate()` returns `{rawJson, usage}`. OpenAI = `live`. Gemini/Claude/DeepSeek = `mock` in 3C-1 (canned LlmDraft; no external call). Mock providers are selectable for real generation ONLY in dev/test (`ALLOW_MOCK_PROVIDERS=1`).
+- No silent substitution: if a user explicitly selects a provider that is unavailable / not `can_generate_real_output`, the server returns `provider_unavailable` (HTTP 409) — it does NOT fall back to OpenAI. Unspecified provider defaults to OpenAI.
+- Pricing (`price_status: verified|placeholder`, `usable_for_cost_estimate`): placeholder prices are never used in cost; `WorkCostPanel` shows a cost-pending label. Only `verified` (official pricing + `price_snapshot_date`) is used.
+- Contract Canary (`server/canary/`): a versioned Korean seed bank (`canary_version`) run across providers, aggregating schema_success_rate / fallback_rate / latency / cost / `private_secret_leak_count` (must be 0) / cap-compliance / Korean usefulness. Pairwise quality comparison uses order-swap + length-bias guard + rationale + human review. Thresholds are AgentScribe internal operating bars, NOT an industry standard. Auto-routing is deferred (logs first). Refs: FrugalGPT (2305.05176), RouteLLM (2406.18665), MT-Bench/Arena (2306.05685), HELM (2211.09110).
 
 Security invariants (Phase 3B):
 - The provider API key (`OPENAI_API_KEY`) lives in server env only. Never in the client bundle, never under a `VITE_` prefix, never logged, never returned in a response.

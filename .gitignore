@@ -20,6 +20,8 @@ dist-ssr
 # Env / secrets
 .env
 .env.*
+# but keep the template (Phase 3C-1: .env.* was hiding it)
+!.env.example
 
 # Phase 1 runtime store reservation (no real file writes yet)
 data/

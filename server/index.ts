@@ -10,6 +10,7 @@ import { ZodError } from "zod";
 import { sanitizeExpandRequest } from "./inputFirewall.js";
 import { route } from "./modelRouter.js";
 import { LlmExpander } from "./llmExpander.js";
+import { listProviderSummaries, canRunRealGeneration } from "./providers/capabilityMatrix.js";
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -25,7 +26,7 @@ function cors(req: Request, res: Response, next: NextFunction): void {
   if (origin && ALLOWED_ORIGINS.has(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "content-type");
   }
   if (req.method === "OPTIONS") {
@@ -62,6 +63,11 @@ app.use(cors);
 app.use(express.json({ limit: "64kb" }));
 app.use(rateLimit);
 
+// Provider availability (status + key presence). NEVER returns any key value.
+app.get("/api/providers", (_req: Request, res: Response) => {
+  res.json({ providers: listProviderSummaries() });
+});
+
 app.post("/api/expand", async (req: Request, res: Response) => {
   let request;
   try {
@@ -70,8 +76,16 @@ app.post("/api/expand", async (req: Request, res: Response) => {
     res.status(400).json({ error_type: e instanceof ZodError ? "invalid_request" : "bad_request" });
     return;
   }
+  // No silent substitution: an explicitly-chosen provider that cannot generate
+  // real output (mock without dev flag / missing key) is rejected, not swapped.
+  const chosen = request.options?.provider;
+  if (chosen && !canRunRealGeneration(chosen)) {
+    res.status(409).json({ error_type: "provider_unavailable", provider: chosen });
+    return;
+  }
   try {
     const decision = route({
+      provider: chosen,
       effective_scale: request.effective_scale,
       budget_class: request.options?.budget_class,
       quality_pref: request.options?.quality_pref,

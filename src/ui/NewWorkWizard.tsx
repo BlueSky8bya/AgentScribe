@@ -13,9 +13,10 @@ import { bootstrapWork } from "../core/bootstrapWork.js";
 import { computeScaleCheck, defaultEpisodes, scaleGuidanceMessage } from "../core/scale/scaleCheck.js";
 import { LocalStore } from "../core/store/localStore.js";
 // [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3b_llm_expander_v001.md section 6] LLM expander + cost + notice
+import { useEffect } from "react";
 import { RemoteExpander } from "../core/expand/remoteExpander.js";
 import { DeterministicExpander } from "../core/expand/deterministicExpander.js";
-import type { CostLedgerEntry } from "../core/expand/remoteTypes.js";
+import type { CostLedgerEntry, ProviderId, ProviderSummary } from "../core/expand/remoteTypes.js";
 import { ExternalSendNotice } from "./ExternalSendNotice.js";
 import { ExpandProgress } from "./ExpandProgress.js";
 
@@ -39,6 +40,21 @@ export function NewWorkWizard({ onComplete }: { onComplete?: (work: WorkRecord, 
   // [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3b_llm_expander_v001.md section 9.1] AI on/off + external-send consent
   const [useAi, setUseAi] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  // [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3c1_multiprovider_foundation_v001.md section 8] provider + tier picker
+  const [providers, setProviders] = useState<ProviderSummary[]>([]);
+  const [provider, setProvider] = useState<ProviderId>("openai");
+  const [tierPref, setTierPref] = useState<"save" | "high">("high");
+
+  useEffect(() => {
+    // Load provider availability/status (no keys returned). Failure -> default openai only.
+    fetch("/api/providers")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((d: { providers: ProviderSummary[] }) => setProviders(d.providers ?? []))
+      .catch(() => setProviders([]));
+  }, []);
+
+  const selectedProvider = providers.find((p) => p.id === provider);
+  const deepseekWarn = provider === "deepseek";
 
   const [title, setTitle] = useState("");
   const [genre, setGenre] = useState("무협");
@@ -83,7 +99,8 @@ export function NewWorkWizard({ onComplete }: { onComplete?: (work: WorkRecord, 
       );
       const shp = NarrativeShape.parse({ work_id: id, mode: shape });
       // AI on -> RemoteExpander (server LLM, deterministic fallback); off -> deterministic only.
-      const expander = useAi ? new RemoteExpander() : new DeterministicExpander();
+      const options = tierPref === "save" ? { provider, budget_class: "save" as const } : { provider, quality_pref: "high" as const };
+      const expander = useAi ? new RemoteExpander({ options }) : new DeterministicExpander();
       const work = await bootstrapWork({ seed, shape: shp, characters, scale_override_reason: overrideReason || undefined }, store, expander);
       const cost = expander instanceof RemoteExpander ? expander.lastCost : null;
       onComplete?.(work, cost);
@@ -158,6 +175,44 @@ export function NewWorkWizard({ onComplete }: { onComplete?: (work: WorkRecord, 
             </div>
           )}
           <ExternalSendNotice enabled={useAi} onToggle={setUseAi} />
+          {useAi && (
+            <div style={{ background: "#f0f4f8", padding: 10, borderRadius: 6, margin: "8px 0" }}>
+              <label>
+                provider:{" "}
+                <select value={provider} onChange={(e) => setProvider(e.target.value as ProviderId)}>
+                  {(providers.length ? providers : [{ id: "openai", status: "stable", can_generate_real_output: true, available: true } as ProviderSummary]).map((p) => {
+                    const selectable = p.can_generate_real_output && p.available;
+                    const label =
+                      p.id.toUpperCase() +
+                      (p.status !== "stable" ? ` (${p.status})` : "") +
+                      (!p.available ? " · 키 없음" : !p.can_generate_real_output ? " · 준비중" : "");
+                    return (
+                      <option key={p.id} value={p.id} disabled={!selectable}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>{" "}
+              <label>
+                품질:{" "}
+                <select value={tierPref} onChange={(e) => setTierPref(e.target.value as "save" | "high")}>
+                  <option value="save">저비용</option>
+                  <option value="high">고품질</option>
+                </select>
+              </label>
+              {selectedProvider && selectedProvider.status !== "stable" && (
+                <p style={{ fontSize: 12, color: "#a55", margin: "6px 0 0" }}>
+                  이 provider는 아직 준비 중입니다(experimental). 실제 생성은 안정화 후 가능합니다.
+                </p>
+              )}
+              {deepseekWarn && (
+                <p style={{ fontSize: 12, color: "#a55", margin: "6px 0 0" }}>
+                  ⚠ DeepSeek: 데이터 전송/보관·검열·구조화 안정성 미검증. 선택 시 주의.
+                </p>
+              )}
+            </div>
+          )}
           {submitting && <ExpandProgress usingAi={useAi} />}
         </section>
       )}

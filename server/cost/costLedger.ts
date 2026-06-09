@@ -35,11 +35,19 @@ export function buildLedgerEntry(args: BuildLedgerArgs): CostLedgerEntry {
   const output_tokens = args.usage.output_tokens;
   const cached_tokens = args.usage.cached_tokens ?? 0;
   const reasoning_tokens = args.usage.reasoning_tokens ?? 0;
-  const unit_price_input = pricing?.input_price_per_1m_tokens ?? 0;
-  const unit_price_output = pricing?.output_price_per_1m_tokens ?? 0;
+  // [PROPOSAL: docs/.../proposal_phase3c1_multiprovider_foundation_v001.md section 7.3]
+  // Only verified, cost-usable prices feed the estimate. Placeholder/unknown -> no cost.
+  const usable = Boolean(pricing?.usable_for_cost_estimate);
+  const unit_price_input = usable ? (pricing?.input_price_per_1m_tokens ?? 0) : 0;
+  const unit_price_output = usable ? (pricing?.output_price_per_1m_tokens ?? 0) : 0;
   const estimated_cost_usd = round6(
     (input_tokens / 1_000_000) * unit_price_input + (output_tokens / 1_000_000) * unit_price_output,
   );
+  const price_status: CostLedgerEntry["price_status"] = !pricing
+    ? "n/a"
+    : pricing.price_status === "verified"
+      ? "verified"
+      : "placeholder";
   return {
     work_id: args.work_id,
     phase: args.phase,
@@ -56,6 +64,7 @@ export function buildLedgerEntry(args: BuildLedgerArgs): CostLedgerEntry {
     estimated_cost_usd,
     actual_cost_usd: args.actual_cost_usd ?? null,
     price_snapshot_date: pricing?.price_snapshot_date ?? "unknown",
+    price_status,
     fallback_used: args.fallback_used,
     fallback_reason: args.fallback_reason ?? null,
   };

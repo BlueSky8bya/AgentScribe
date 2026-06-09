@@ -25,14 +25,31 @@ export interface CostLedgerEntry {
   estimated_cost_usd: number;
   actual_cost_usd: number | null;
   price_snapshot_date: string;
+  // [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3c1_multiprovider_foundation_v001.md section 7.3]
+  // "verified" -> cost is real; "placeholder"/"n/a" -> cost not computed (UI shows "비용 계산 준비중").
+  price_status: "verified" | "placeholder" | "n/a";
   fallback_used: boolean;
   fallback_reason: string | null;
 }
 
-/** Optional routing hints the user can toggle (cost vs quality). */
+export type ProviderId = "openai" | "gemini" | "claude" | "deepseek";
+
+/** Optional routing hints the user can toggle (provider, cost vs quality). */
 export interface ExpandOptions {
+  provider?: ProviderId;
   quality_pref?: "high" | "balanced";
   budget_class?: "save" | "normal";
+}
+
+/** Mirror of the server /api/providers item (no keys — availability only). */
+export interface ProviderSummary {
+  id: ProviderId;
+  status: "disabled" | "experimental" | "beta" | "stable";
+  adapter_mode: "live" | "mock" | "disabled";
+  can_generate_real_output: boolean;
+  available: boolean;
+  tiers: ("cheap" | "quality")[];
+  note?: string;
 }
 
 /** Response shape of POST /api/expand. */
@@ -59,6 +76,7 @@ export function fallbackCost(work_id: string, reason: string): CostLedgerEntry {
     estimated_cost_usd: 0,
     actual_cost_usd: 0,
     price_snapshot_date: "n/a",
+    price_status: "n/a",
     fallback_used: true,
     fallback_reason: reason,
   };

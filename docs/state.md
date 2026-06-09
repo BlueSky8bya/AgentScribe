@@ -7,13 +7,14 @@
 
 | Field | Value |
 |---|---|
-| current_phase | Phase 3B — LLM expander backend (provider = OpenAI) IMPLEMENTED |
+| current_phase | Phase 3C-1 — multi-provider foundation + canary harness (mock) IMPLEMENTED |
 | design_status | Pipeline Foundation v001 APPROVED 2026-06-08, archived |
 | phase1_status | done 2026-06-08 (foundation data and seed) |
 | phase2_status | done 2026-06-08 (design assets, deterministic gates/canary, lock, doc-lang guard) |
 | phase3a_status | done 2026-06-08 (minimal seed, scale guard, rule-based expander, mixed-initiative review) |
 | phase3b_status | done 2026-06-09 (Node backend, OpenAI model_router, input firewall, LLM expander, cost ledger, fallback) |
-| active_task | none (Phase 4 = Writer episode generation needs its own proposal) |
+| phase3c1_status | done 2026-06-09 (provider adapter foundation, capability matrix, /api/providers, allowlist, mock adapters, pricing price_status, canary harness) |
+| active_task | none (Phase 3C-2 live provider rollout + Phase 4 Writer each need their own proposal) |
 | director_status | idle |
 | planner_status | idle |
 | writer_status | idle |

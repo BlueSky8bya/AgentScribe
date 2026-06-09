@@ -11,6 +11,8 @@ import { SeedSettings, CharacterPublicSeed } from "../src/core/schemas/index.js"
 
 export const ExpandOptionsSchema = z
   .object({
+    // [PROPOSAL: docs/.../proposal_phase3c1_multiprovider_foundation_v001.md section 8] provider is an enum; client cannot name a model
+    provider: z.enum(["openai", "gemini", "claude", "deepseek"]).optional(),
     quality_pref: z.enum(["high", "balanced"]).optional(),
     budget_class: z.enum(["save", "normal"]).optional(),
   })
