@@ -12,6 +12,9 @@ import { route } from "./modelRouter.js";
 import { LlmExpander } from "./llmExpander.js";
 import { listProviderSummaries, canRunRealGeneration } from "./providers/capabilityMatrix.js";
 
+// Load server-only secrets from .env (gitignored) before reading process.env.
+try { process.loadEnvFile(); } catch { /* no .env present */ }
+
 const PORT = Number(process.env.PORT ?? 8787);
 
 // CORS: localhost origins only (dev). No wildcard.

@@ -83,6 +83,8 @@ export async function runProviderCanary(
 }
 
 async function main(): Promise<void> {
+  // Load server-only secrets from .env (gitignored). Keys never come from the CLI args.
+  try { process.loadEnvFile(); } catch { /* no .env present */ }
   const provider = process.argv[2] as ProviderId | undefined;
   if (provider !== "claude" && provider !== "gemini") {
     console.error("usage: canary:provider -- <claude|gemini>");

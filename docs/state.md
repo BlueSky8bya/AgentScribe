@@ -15,8 +15,8 @@
 | phase3b_status | done 2026-06-09 (Node backend, OpenAI model_router, input firewall, LLM expander, cost ledger, fallback) |
 | phase3c1_status | done 2026-06-09 (provider adapter foundation, capability matrix, /api/providers, allowlist, mock adapters, pricing price_status, canary harness) |
 | phase3c2_status | done 2026-06-09 (live Claude+Gemini adapters gated by user_selectable; verified pricing; first-request latency; canary caps; DeepSeek still placeholder/mock) |
-| phase3c2b_status | tooling done 2026-06-09 (canary:provider CLI, caps, payload-class check, latency split, promotion verdict, invariant test). REAL-API canary + promotion PENDING owner run with keys (Claude then Gemini) |
-| active_task | await owner real-API canary run (ALLOW_GATED_LIVE_CANARY=1 + key) -> on PASS, promote provider user_selectable=true |
+| phase3c2b_status | done 2026-06-09 (tooling + real-API smoke canary run). Claude FAIL(fallback_rate=0.2), Gemini FAIL(fallback_rate=0.6) -> NEITHER promoted; both stay experimental/user_selectable=false. Reports: docs/test_reports/2026-06-09/ |
+| active_task | none. Next: investigate canary fallbacks (structured-output robustness) before re-running; or Phase 4 Writer. Each needs its own proposal. |
 | director_status | idle |
 | planner_status | idle |
 | writer_status | idle |
