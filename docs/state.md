@@ -17,7 +17,8 @@
 | phase3c2_status | done 2026-06-09 (live Claude+Gemini adapters gated by user_selectable; verified pricing; first-request latency; canary caps; DeepSeek still placeholder/mock) |
 | phase3c2b_status | done 2026-06-09 (tooling + real-API smoke canary run). Claude/Gemini initially FAIL on fallback_rate. |
 | phase3c2c_status | done 2026-06-09 (diagnosis + hardening: max_tokens 8192, central JSON extract, withTimeout, classify/diagnose). Claude PASS -> PROMOTED (live + user_selectable=true + beta, haiku+sonnet). Gemini FAIL (api_error 2/5, not schema) -> stays experimental; further fix deferred to its own proposal (§9.1). Reports: docs/test_reports/2026-06-09/*_v002.md |
-| active_task | none. Options: Gemini api_error follow-up proposal; DeepSeek live proposal; Phase 4 Writer. |
+| phase4_status | code done 2026-06-09 (Writer episode generation: WriterContract firewall, /api/write, writerService retry/fail-no-fabrication, EpisodeDraft status+commit_status, Korean validate, episode store, UI). Providers = OpenAI/Claude (user_selectable). Real-body smoke = pending owner/agent run with keys. |
+| active_task | none. Options: real Writer smoke (OpenAI/Claude 1 episode); Phase 5 Creative Review / Immersion Gates; Gemini api_error or DeepSeek live (deferred). |
 | director_status | idle |
 | planner_status | idle |
 | writer_status | idle |

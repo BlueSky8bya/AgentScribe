@@ -11,6 +11,9 @@ import { sanitizeExpandRequest } from "./inputFirewall.js";
 import { route } from "./modelRouter.js";
 import { LlmExpander } from "./llmExpander.js";
 import { listProviderSummaries, canRunRealGeneration } from "./providers/capabilityMatrix.js";
+import { writeEpisode } from "./writer/writerService.js";
+import type { WriterContract } from "../src/core/writer/writerContract.js";
+import { assertNoPrivateLeak } from "../src/core/firewall/contextPackager.js";
 
 // Load server-only secrets from .env (gitignored) before reading process.env.
 try { process.loadEnvFile(); } catch { /* no .env present */ }
@@ -101,6 +104,42 @@ app.post("/api/expand", async (req: Request, res: Response) => {
     res.json({ expansion, cost });
   } catch {
     // Never leak internals (no key, no prompt, no stack) to the client.
+    res.status(500).json({ error_type: "server_error" });
+  }
+});
+
+// [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase4_writer_episode_v001.md section 2,5] Writer episode generation
+app.post("/api/write", async (req: Request, res: Response) => {
+  const body = req.body as { contract?: unknown; options?: { provider?: string; quality_pref?: "high" | "balanced" } };
+  const contract = body?.contract as
+    | { work_id?: string; episode_index?: number; episode_contract?: { target_char_count?: number } }
+    | undefined;
+  if (!contract?.work_id || typeof contract.episode_index !== "number") {
+    res.status(400).json({ error_type: "invalid_request" });
+    return;
+  }
+  // Firewall re-check: reject any contract that carries private field names.
+  try {
+    assertNoPrivateLeak(contract);
+  } catch {
+    res.status(400).json({ error_type: "private_field_in_payload" });
+    return;
+  }
+  // Only user-selectable providers (currently OpenAI/Claude). Gemini/DeepSeek -> 409.
+  const chosen = (body.options?.provider as "openai" | "claude" | "gemini" | "deepseek" | undefined) ?? "openai";
+  if (!canRunRealGeneration(chosen)) {
+    res.status(409).json({ error_type: "provider_unavailable", provider: chosen });
+    return;
+  }
+  try {
+    const decision = route({
+      provider: chosen,
+      effective_scale: "long", // episode length comes from the contract, not the scale band
+      quality_pref: body.options?.quality_pref,
+    });
+    const { draft, cost } = await writeEpisode(contract as unknown as WriterContract, decision);
+    res.json({ draft, cost });
+  } catch {
     res.status(500).json({ error_type: "server_error" });
   }
 });

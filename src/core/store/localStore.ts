@@ -1,7 +1,8 @@
 // [PROPOSAL: docs/proposals/LATEST_PROPOSAL.md §3] Phase 1 localStorage StoreAdapter
 // Stores public/private groups under keys mirroring data/works/<id>/{public,private}.json.
 import { WorkRecord, migrateWork } from "../schemas/index.js";
-import { workPaths, type StoreAdapter } from "./StoreAdapter.js";
+import { EpisodeDraft } from "../schemas/episodeDraft.js";
+import { workPaths, episodePath, type StoreAdapter } from "./StoreAdapter.js";
 
 /** Minimal key/value backend. Defaults to browser localStorage; injectable for tests. */
 export interface KvBackend {
@@ -68,6 +69,32 @@ export class LocalStore implements StoreAdapter {
 
   async list(): Promise<string[]> {
     return this.list_ids();
+  }
+
+  // [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase4_writer_episode_v001.md section 3.1]
+  // Only committed (user_saved) drafts should be saved; failed is never persisted.
+  async saveEpisode(ep: EpisodeDraft): Promise<void> {
+    const parsed = EpisodeDraft.parse(ep);
+    if (parsed.status === "failed") throw new Error("refuse_to_save_failed_episode");
+    this.kv.setItem(episodePath(parsed.work_id, parsed.episode_id), JSON.stringify(parsed));
+    const idxKey = workPaths(parsed.work_id).episodesIndex;
+    const ids = new Set(this.episode_ids(parsed.work_id));
+    ids.add(parsed.episode_id);
+    this.kv.setItem(idxKey, JSON.stringify([...ids]));
+  }
+
+  async loadEpisode(workId: string, episodeId: string): Promise<EpisodeDraft | null> {
+    const raw = this.kv.getItem(episodePath(workId, episodeId));
+    return raw ? EpisodeDraft.parse(JSON.parse(raw)) : null;
+  }
+
+  async listEpisodes(workId: string): Promise<string[]> {
+    return this.episode_ids(workId);
+  }
+
+  private episode_ids(workId: string): string[] {
+    const raw = this.kv.getItem(workPaths(workId).episodesIndex);
+    return raw ? (JSON.parse(raw) as string[]) : [];
   }
 
   private list_ids(): string[] {

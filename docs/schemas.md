@@ -76,6 +76,14 @@ No WorkRecord change. Adds server-only provider types + extends cost/pricing.
 
 Router: `modelRouter.route({provider, ...})` resolves `{provider, model, tier, entry}` from the matrix allowlist; unknown/disabled tier throws. `/api/expand` rejects an explicitly-chosen unavailable provider with `provider_unavailable` (no silent OpenAI swap).
 
+## Phase 4 (IMPLEMENTED) — Writer episode generation
+
+- `EpisodeDraft` (src/core/schemas/episodeDraft.ts) — `EPISODE_SCHEMA_VERSION="0.1.0"`; `work_id`, `episode_id`, `episode_index`, `title?`, `body_text` (Korean), `char_count`, `target_char_count`, `provenance="agent_writer"`, `provider`, `model`, `status` (draft|failed), `commit_status` (generated|user_saved|discarded), `beats_covered`, `created_at` (server ISO; tests fixed clock), `error_type`, `notes?`. NOT part of WorkRecord (separate store).
+- `WriterContract` (src/core/writer/writerContract.ts) — writer-safe assembly from WorkRecord PUBLIC group only: `authorial_intent` (lasting_feeling/desired_emotion/final_image), `blueprint_slice` (episode_goal/theme_statement), `episode_contract` (pov, target_char_count, active_characters [public_summary], active_relationship_beats, allowed/forbidden_character_reveals derived from RevealSchedule vs episode index, allowed_new_characters=0, world_rules, reader_experience_goals). `assertNoPrivateLeak` guards it.
+- Store: `StoreAdapter.saveEpisode/loadEpisode/listEpisodes`; LocalStore persists committed episodes at `data/works/<id>/episodes/<episode_id>.json` and **refuses to save status="failed"**.
+- Server: `server/writer/` — `writePrompt` (Korean prose + micro-detail allow / forbid new chars·plot·scheduled reveals·world-rule·secrets), `validate` (`koreanRatio`, `validateBody` → empty|non_korean, threshold 0.5), `writerService.writeEpisode` (adapter via registry, withTimeout, ≤2 retries, NO fabricated fallback, costLedger phase `later_writer`, llmLog). `/api/write` enforces firewall + `canRunRealGeneration` provider allowlist (OpenAI/Claude) + `provider_unavailable`.
+- Frontend: `src/core/writer/remoteWrite.ts` + `src/ui/EpisodeWriter.tsx` (pick episode/provider/quality → generate → save[user_saved]/discard; failed never saved).
+
 ## Phase 3C-2 (IMPLEMENTED) — live Claude + Gemini adapters (gated)
 
 - `CapabilityEntry` gains `user_selectable` — the UI/routing gate, SEPARATE from `adapter_mode`. `can_generate_real_output = adapter_mode==="live" && user_selectable`. Claude/Gemini are `adapter_mode:"live"` but `user_selectable:false` (experimental) until the canary promotes them. `canRunRealGeneration()` allows a gated-live provider only under the dev override (`ALLOW_MOCK_PROVIDERS=1`).
