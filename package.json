@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:client": "vite",
     "dev:server": "tsx watch server/index.ts",
+    "canary:provider": "tsx server/canary/runCli.ts",
     "build": "tsc -b && vite build",
     "build:server": "tsc -p server/tsconfig.json",
     "lint": "eslint . && node scripts/check-doc-lang.mjs",

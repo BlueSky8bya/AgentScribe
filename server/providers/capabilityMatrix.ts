@@ -142,6 +142,20 @@ export function devOverrideAllowed(): boolean {
   return process.env.ALLOW_MOCK_PROVIDERS === "1";
 }
 
+// [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3c2b_provider_canary_promotion_v001.md section 3]
+/** Separate dev flag for running the Contract Canary against a gated-LIVE provider
+ *  (Claude/Gemini before promotion). NOT "allow mock promotion" — distinct from
+ *  ALLOW_MOCK_PROVIDERS. NEVER set in prod. */
+export function gatedLiveCanaryAllowed(): boolean {
+  return process.env.ALLOW_GATED_LIVE_CANARY === "1";
+}
+
+/** Derived invariant: a provider can generate real output IFF live AND user-selectable.
+ *  Stored field must always equal this (enforced by an invariant test). */
+export function expectedCanGenerate(entry: Pick<CapabilityEntry, "adapter_mode" | "user_selectable">): boolean {
+  return entry.adapter_mode === "live" && entry.user_selectable === true;
+}
+
 export interface ProviderSummary {
   id: ProviderId;
   status: ProviderStatus;

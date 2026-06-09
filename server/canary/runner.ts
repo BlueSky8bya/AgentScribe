@@ -142,36 +142,84 @@ export function withinCaps(calls: number, cost_usd: number, caps: CanaryCaps = D
   return calls <= caps.max_calls && cost_usd <= caps.max_cost_usd;
 }
 
+// [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3c2b_provider_canary_promotion_v001.md section 3,5] payload check + latency split + promotion verdict
+
+/** Structural check: the outbound payload carries no private/secret fields. Boolean only. */
+export function payloadClassOk(input: ExpandInput): boolean {
+  const s = JSON.stringify(input);
+  return !s.includes("private_backstory") && !/"secrets"\s*:/.test(s);
+}
+
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  const idx = Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length));
+  return sorted[idx];
+}
+
+export interface LatencySplit {
+  first_request_latency_ms: number;
+  subsequent_p50_ms: number;
+  subsequent_p95_ms: number;
+}
+
+/** Split a provider's call latencies into first-request vs subsequent (p50/p95). */
+export function splitLatency(latencies: { latency_ms: number; is_first_request: boolean }[]): LatencySplit {
+  const first = latencies.find((l) => l.is_first_request)?.latency_ms ?? 0;
+  const rest = latencies.filter((l) => !l.is_first_request).map((l) => l.latency_ms).sort((a, b) => a - b);
+  return { first_request_latency_ms: first, subsequent_p50_ms: percentile(rest, 50), subsequent_p95_ms: percentile(rest, 95) };
+}
+
+export interface PromotionVerdict {
+  pass: boolean;
+  reasons: string[];
+}
+
+/** Smoke promotion gate (proposal section 5): leak=0 AND schema=100% AND fallback=0 AND payload ok. */
+export function evaluatePromotion(report: CanaryReport, fallback_rate: number, payload_ok: boolean): PromotionVerdict {
+  const reasons: string[] = [];
+  if (report.private_secret_leak_count !== 0) reasons.push(`leak=${report.private_secret_leak_count}`);
+  if (report.schema_success_rate !== 1) reasons.push(`schema_success_rate=${report.schema_success_rate}`);
+  if (fallback_rate !== 0) reasons.push(`fallback_rate=${fallback_rate}`);
+  if (!payload_ok) reasons.push("payload_class_not_public_only");
+  return { pass: reasons.length === 0, reasons };
+}
+
 export interface BoundedCanaryResult {
   report: CanaryReport;
   calls: number;
   cost_usd: number;
+  fallback_count: number;
+  fallback_rate: number;
   aborted: boolean; // true if a cap would have been exceeded (run stopped early)
 }
 
 /**
  * Run the seed bank under hard caps. Each case = 1 call. Stops BEFORE a call that
- * would breach max_calls or max_cost_usd. `expandCost` returns the per-call cost.
+ * would breach max_calls or max_cost_usd. `expandCost` returns the per-call cost
+ * and whether that call fell back to the deterministic expander.
  */
 export async function runCanaryBounded(
-  expandCost: (input: ExpandInput) => Promise<{ out: ExpansionResult; cost_usd: number }>,
+  expandCost: (input: ExpandInput) => Promise<{ out: ExpansionResult; cost_usd: number; fallback_used?: boolean }>,
   meta: CanaryMeta,
   caps: CanaryCaps = DEFAULT_CANARY_CAPS,
 ): Promise<BoundedCanaryResult> {
   const results: CanaryCaseResult[] = [];
   let calls = 0;
   let cost_usd = 0;
+  let fallback_count = 0;
   let aborted = false;
   for (const fx of CANARY_SEED_BANK) {
     if (!withinCaps(calls + 1, cost_usd, caps)) { aborted = true; break; }
     const r = await runCanaryCase(fx, async (input) => {
-      const { out, cost_usd: c } = await expandCost(input);
+      const { out, cost_usd: c, fallback_used } = await expandCost(input);
       cost_usd += c;
+      if (fallback_used) fallback_count += 1;
       return out;
     });
     calls += 1;
     results.push(r);
     if (cost_usd > caps.max_cost_usd) { aborted = true; break; } // post-call cost breach
   }
-  return { report: aggregateCanary(results, meta), calls, cost_usd, aborted };
+  const fallback_rate = calls > 0 ? fallback_count / calls : 0;
+  return { report: aggregateCanary(results, meta), calls, cost_usd, fallback_count, fallback_rate, aborted };
 }

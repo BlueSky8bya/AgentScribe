@@ -28,7 +28,24 @@ Rubric 1–5 with rationale + trace_id; never trust single judge; high-risk uses
 ## Test commands
 
 ```text
-PENDING: vitest / pytest after Phase 1 scaffolding.
+npm run build        # client tsc -b + vite
+npm run build:server # server typecheck
+npm run lint         # eslint + doc-language guard
+npm test             # vitest (unit)
 ```
 
-> Reports: `docs/test_reports/YYYY-MM-DD/`.
+## Provider Contract Canary (Phase 3C-2b)
+
+Real-API smoke canary for ONE gated-live provider. Owner runs it; the agent only builds tooling and records results.
+
+```text
+# dev only — keys in server .env, never on the CLI
+ALLOW_GATED_LIVE_CANARY=1 npm run canary:provider -- claude
+ALLOW_GATED_LIVE_CANARY=1 npm run canary:provider -- gemini
+```
+- Caps: <=10 calls/provider, <=$5/run; aborts before breaching.
+- Promotion gate (smoke): `private_secret_leak_count=0` AND `schema_success_rate=1.0` AND `fallback_rate=0` AND `payload_class_ok`. Pass -> `user_selectable=true` (status `beta`); fail -> stays `experimental`/`user_selectable=false`. (Internal bars, not an industry standard.)
+- Output is REDACTED: numbers/booleans/model ids + first/subsequent latency only. Never a key, raw prompt, or raw payload.
+- `can_generate_real_output` is a derived invariant (`adapter_mode==="live" && user_selectable`), enforced by a unit test.
+
+> Reports: `docs/test_reports/YYYY-MM-DD/test_provider_canary_<provider>_vNNN.md` (CanaryReport + latency + payload_class_ok + pass/fail; no raw payload/key).

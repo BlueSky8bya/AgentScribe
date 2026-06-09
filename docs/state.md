@@ -15,7 +15,8 @@
 | phase3b_status | done 2026-06-09 (Node backend, OpenAI model_router, input firewall, LLM expander, cost ledger, fallback) |
 | phase3c1_status | done 2026-06-09 (provider adapter foundation, capability matrix, /api/providers, allowlist, mock adapters, pricing price_status, canary harness) |
 | phase3c2_status | done 2026-06-09 (live Claude+Gemini adapters gated by user_selectable; verified pricing; first-request latency; canary caps; DeepSeek still placeholder/mock) |
-| active_task | none (DeepSeek live + provider canary promotion + Phase 4 Writer each need their own proposal/step) |
+| phase3c2b_status | tooling done 2026-06-09 (canary:provider CLI, caps, payload-class check, latency split, promotion verdict, invariant test). REAL-API canary + promotion PENDING owner run with keys (Claude then Gemini) |
+| active_task | await owner real-API canary run (ALLOW_GATED_LIVE_CANARY=1 + key) -> on PASS, promote provider user_selectable=true |
 | director_status | idle |
 | planner_status | idle |
 | writer_status | idle |
