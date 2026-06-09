@@ -12,6 +12,12 @@ import {
 import { bootstrapWork } from "../core/bootstrapWork.js";
 import { computeScaleCheck, defaultEpisodes, scaleGuidanceMessage } from "../core/scale/scaleCheck.js";
 import { LocalStore } from "../core/store/localStore.js";
+// [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3b_llm_expander_v001.md section 6] LLM expander + cost + notice
+import { RemoteExpander } from "../core/expand/remoteExpander.js";
+import { DeterministicExpander } from "../core/expand/deterministicExpander.js";
+import type { CostLedgerEntry } from "../core/expand/remoteTypes.js";
+import { ExternalSendNotice } from "./ExternalSendNotice.js";
+import { ExpandProgress } from "./ExpandProgress.js";
 
 const store = new LocalStore();
 
@@ -27,9 +33,12 @@ const SCALES: { id: ScaleMode; label: string; desc: string }[] = [
 
 interface CharRow { name: string; role: string; gender: string; personality: string }
 
-export function NewWorkWizard({ onComplete }: { onComplete?: (work: WorkRecord) => void }) {
+export function NewWorkWizard({ onComplete }: { onComplete?: (work: WorkRecord, cost: CostLedgerEntry | null) => void }) {
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  // [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3b_llm_expander_v001.md section 9.1] AI on/off + external-send consent
+  const [useAi, setUseAi] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const [title, setTitle] = useState("");
   const [genre, setGenre] = useState("무협");
@@ -59,6 +68,7 @@ export function NewWorkWizard({ onComplete }: { onComplete?: (work: WorkRecord) 
 
   async function submit() {
     setError(null);
+    setSubmitting(true);
     try {
       const id = workId();
       const seed = SeedSettings.parse({
@@ -72,10 +82,15 @@ export function NewWorkWizard({ onComplete }: { onComplete?: (work: WorkRecord) 
         }),
       );
       const shp = NarrativeShape.parse({ work_id: id, mode: shape });
-      const work = await bootstrapWork({ seed, shape: shp, characters, scale_override_reason: overrideReason || undefined }, store);
-      onComplete?.(work);
+      // AI on -> RemoteExpander (server LLM, deterministic fallback); off -> deterministic only.
+      const expander = useAi ? new RemoteExpander() : new DeterministicExpander();
+      const work = await bootstrapWork({ seed, shape: shp, characters, scale_override_reason: overrideReason || undefined }, store, expander);
+      const cost = expander instanceof RemoteExpander ? expander.lastCost : null;
+      onComplete?.(work, cost);
     } catch (e) {
       setError(e instanceof z.ZodError ? "입력 확인 필요: " + e.issues.map((i) => i.path.join(".")).join(", ") : String(e));
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -142,13 +157,15 @@ export function NewWorkWizard({ onComplete }: { onComplete?: (work: WorkRecord) 
               <label>회차 길이(자) <input type="number" value={episodeLength} onChange={(e) => setEpisodeLength(Number(e.target.value))} /></label>
             </div>
           )}
+          <ExternalSendNotice enabled={useAi} onToggle={setUseAi} />
+          {submitting && <ExpandProgress usingAi={useAi} />}
         </section>
       )}
 
       <div className="nav">
-        {step > 1 && <button onClick={() => setStep(step - 1)}>이전</button>}
+        {step > 1 && <button onClick={() => setStep(step - 1)} disabled={submitting}>이전</button>}
         {step < 3 && <button onClick={() => setStep(step + 1)}>다음</button>}
-        {step === 3 && <button onClick={submit}>초안 만들기</button>}
+        {step === 3 && <button onClick={submit} disabled={submitting}>{submitting ? "만드는 중…" : "초안 만들기"}</button>}
       </div>
     </div>
   );

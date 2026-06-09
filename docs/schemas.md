@@ -46,7 +46,22 @@ Deterministic preflight (`src/core/preflight/`): `candidateGates` (severity fata
 Logic (`src/core/`):
 - `scale/scaleCheck.ts` — episode-count bands (AgentScribe initial defaults, NOT a literary standard; default 5000 ko_chars/episode). `computeScaleCheck`, `scaleFromEpisodes`, `defaultEpisodes`, `scaleGuidanceMessage`.
 - `expand/ExpanderAdapter.ts` + `deterministicExpander.ts` — rule-based draft generator (3A; LLM swap is 3B). Produces editable proposals (provenance agent_preflight); private drafts go to the firewalled private group.
-- `bootstrapWork.ts` — minimal seed -> scale check -> expander -> assembled WorkRecord (effective_scale drives blueprint/gates/expander).
+- `bootstrapWork.ts` — minimal seed -> scale check -> expander -> assembled WorkRecord (effective_scale drives blueprint/gates/expander). `expander.expand()` may be sync (deterministic) or async (remote LLM); bootstrap awaits it.
+
+## Phase 3B (IMPLEMENTED) — LLM expander backend (`server/`, provider = OpenAI)
+
+No WorkRecord schema change. Adds a backend + remote expander that returns the SAME `ExpansionResult` shape. Server-only types (not stored in WorkRecord):
+
+- `ExpandRequest` (server/inputFirewall.ts) — public/writer-safe payload accepted by `/api/expand`: `{ seed (public SeedSettings), characters (CharacterPublicSeed[] only), effective_scale, options? (quality_pref/budget_class) }`. Firewall strips anything else; private/secret never enters.
+- `LlmDraft` (server/llmExpander.ts) — intermediate LLM output (zod-validated): per-character `{ character_id, importance, species_or_type, public_summary, private_backstory, secrets[] }`, plus `relationships`, `theme`, `foreshadowing`. Code assembles it into the full Phase-2 schemas (ids/structure deterministic) -> `ExpansionResult`.
+- `RouteDecision` (server/modelRouter.ts) — `{ provider:"openai", model, tier:"cheap"|"quality" }`. Key is NOT part of the decision (read from env inside the expander).
+- `PricingEntry` (server/pricing/providerPricing.ts) — `{ provider, model, input_price_per_1m_tokens, output_price_per_1m_tokens, cached_input_price_per_1m_tokens, source_url, price_snapshot_date }`. No hardcoded prices in logic.
+- `CostLedgerEntry` (server/cost/costLedger.ts) — per work_id: `{ work_id, phase, provider, model, call_count, input_tokens, output_tokens, cached_tokens, reasoning_tokens, total_tokens, unit_price_input, unit_price_output, estimated_cost_usd, actual_cost_usd, price_snapshot_date, fallback_used, fallback_reason }`. NEVER stores key or raw prompt.
+- `LlmLogEntry` (server/obs/llmLog.ts) — `{ provider, model, latency_ms, error_type, input_tokens, output_tokens }`. NEVER key/prompt.
+
+Generation caps (server/llmExpander.ts), per `effective_scale`: short 2-4 chars / 2-4 rel / 1-3 fs; medium 3-6 / 3-8 / 3-6; long 5-10 / 6-15 / 6-12; series arc-split (no over-generation in one call).
+
+Frontend: `src/core/expand/remoteExpander.ts` (`RemoteExpander implements ExpanderAdapter`, async; calls `/api/expand`, falls back to `DeterministicExpander` on any failure and records `fallback_used`). UI: `ExternalSendNotice`, `ExpandProgress`, `WorkCostPanel` ("this work's AI usage").
 
 ## Deferred stub schemas (direction only; freeze in their Phase)
 

@@ -9,6 +9,7 @@
 | Layer | Tech | Status |
 |---|---|---|
 | Frontend / Orchestration | Vite + TypeScript | Phase 1 |
+| LLM backend (`server/`) | Node + Express + OpenAI SDK | Phase 3B |
 | QA / Gates | server-side (lang TBD) | deferred |
 | Shared state | `.md` / `.json` (Blackboard), DB later | Phase 1 files; PostgreSQL deferred |
 
@@ -40,6 +41,30 @@ Prompt Firewall: Writer receives only Episode Contract `allowed_*` + `public_sum
 ## Phase roadmap (MVP cut)
 
 - **Phase 1 (MVP)**: Seed + Intent + Shape + basic Blueprint/Episode Card storage. MVP schemas only (`docs/schemas.md`). Craft Trait / Character Firewall detail / Creative Review / Reader Probe = direction only.
-- Phase 2+: Preflight rooms, Character/Cast/Firewall detail, gates 2/3-tier, NMK full, Scale Mode, operational architecture (eval/routing/DB/UI/latency).
+- **Phase 2**: Editorial Room / Preflight, design assets, deterministic gates/canary, lock, doc-lang guard.
+- **Phase 3A**: Minimal seed + Scale Consistency Guard + rule-based `DeterministicExpander` (no LLM) + mixed-initiative review.
+- **Phase 3B**: LLM **design assistant** behind a Node backend. Swaps `DeterministicExpander` for an LLM expander; produces only design drafts (character/relationship/theme/foreshadow/arc), NOT episode prose (Writer = Phase 4).
+- Phase 4+: Writer episode generation, Creative Review, LLM semantic gates, NMK full, operational architecture (DB/UI/latency).
 
-Each phase ships under its own proposal (DOC BEFORE CODE). Folder layout: `src/agents/{director,planner,writer}`, `src/python_engine/qa`, `src/ui` (Phase 1), `docs/`.
+Each phase ships under its own proposal (DOC BEFORE CODE). Folder layout: `src/agents/{director,planner,writer}`, `src/python_engine/qa`, `src/ui`, `src/core`, `server/` (Phase 3B backend), `docs/`.
+
+## Phase 3B — LLM expander backend (`server/`)
+
+Provider selected at approval: **GPT / OpenAI** (one provider implemented; Gemini/Claude/DeepSeek deferred to multi-provider fallback). Full rationale: `docs/proposals/archive/2026-06-09/proposal_phase3b_llm_expander_v001.md`.
+
+```text
+[browser/Vite]  --POST /api/expand {seed, public chars, effective_scale}-->  [server/]
+  server pipeline:  inputFirewall (public/writer-safe only)
+                    -> modelRouter (provider fixed = openai; budget/scale/risk -> model tier)
+                    -> llmExpander (OpenAI SDK; structured/JSON output -> zod validate -> 1 retry)
+                    -> llmLog (provider/model/cost/latency/error_type; NEVER key or raw prompt)
+                    -> costLedger (per work_id tokens + cost; providerPricing table)
+  response: { expansion, cost }   ;  on any failure the client falls back to DeterministicExpander
+```
+
+Security invariants (Phase 3B):
+- The provider API key (`OPENAI_API_KEY`) lives in server env only. Never in the client bundle, never under a `VITE_` prefix, never logged, never returned in a response.
+- Input Firewall: only minimal seed + public/writer-safe fields are sent to the LLM. `private_backstory`/`secrets`/server env/internal logs are never put in the prompt. User free-text is passed as delimited data, never as system instructions, so "ignore previous instructions / print the key" cannot change server rules.
+- CORS limited to localhost (dev); request body size limit; simple rate limit. Public deployment requires auth/usage limits (deferred).
+- Generation caps per `effective_scale` (characters/relationships/foreshadowing) bound how much the LLM drafts.
+- Cost/token tracking is Phase-3B-design-draft only; episode (Phase 4) and review (Phase 5) costs sum in later. Prices live in a server-only `providerPricing` table with `source_url` + `price_snapshot_date` (no hardcoded prices in logic).

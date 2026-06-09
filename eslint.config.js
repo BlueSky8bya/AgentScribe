@@ -19,4 +19,15 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  // [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3b_llm_expander_v001.md section 7] server is Node, not React
+  {
+    files: ['server/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      'react-refresh/only-export-components': 'off',
+      'react-hooks/rules-of-hooks': 'off',
+    },
+  },
 ])

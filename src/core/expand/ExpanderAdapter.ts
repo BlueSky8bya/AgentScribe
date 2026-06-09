@@ -25,6 +25,7 @@ export interface ExpansionResult {
   private_characters: CharacterPrivate[];
 }
 
+// [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3b_llm_expander_v001.md section 4] allow async (remote LLM) impl
 export interface ExpanderAdapter {
-  expand(input: ExpandInput): ExpansionResult;
+  expand(input: ExpandInput): ExpansionResult | Promise<ExpansionResult>;
 }

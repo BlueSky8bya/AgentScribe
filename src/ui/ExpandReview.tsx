@@ -1,9 +1,12 @@
 // [PROPOSAL: docs/proposals/LATEST_PROPOSAL.md section 6] Phase 3 mixed-initiative review of auto-drafted assets
 import { useState } from "react";
 import type { WorkRecord } from "../core/schemas/index.js";
+// [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3b_llm_expander_v001.md section 9B.2] show AI usage/cost
+import type { CostLedgerEntry } from "../core/expand/remoteTypes.js";
+import { WorkCostPanel } from "./WorkCostPanel.js";
 
-/** User reviews rule-based drafts: keep or delete (reject). User is the final decision-maker. */
-export function ExpandReview({ work, onConfirm }: { work: WorkRecord; onConfirm: (w: WorkRecord) => void }) {
+/** User reviews drafts (rule-based or AI): keep or delete (reject). User is the final decision-maker. */
+export function ExpandReview({ work, cost, onConfirm }: { work: WorkRecord; cost?: CostLedgerEntry | null; onConfirm: (w: WorkRecord) => void }) {
   const [w, setW] = useState<WorkRecord>(work);
 
   function dropRelationship(id: string) {
@@ -16,8 +19,9 @@ export function ExpandReview({ work, onConfirm }: { work: WorkRecord; onConfirm:
   return (
     <div className="review">
       <h2>자동 초안 검토 — {w.public.seed.work_id}</h2>
-      <p style={{ color: "#666" }}>아래는 규칙 기반으로 만든 <b>초안(제안)</b>입니다. 마음에 드는 것만 남기세요. 최종 결정은 사용자입니다.</p>
+      <p style={{ color: "#666" }}>아래는 자동으로 만든 <b>초안(제안)</b>입니다. 마음에 드는 것만 남기세요. 최종 결정은 사용자입니다.</p>
       <p>길이 판정(내부): 고른 <b>{w.public.scale_check?.declared_scale}</b> / 실제 <b>{w.public.scale_check?.effective_scale}</b></p>
+      <WorkCostPanel cost={cost ?? null} />
 
       <h3>인물 (자동 설정집 초안)</h3>
       <ul>{w.public.character_bibles.map((c) => <li key={c.character_id}>{c.name} — {c.importance_level} — {c.public_summary}</li>)}</ul>

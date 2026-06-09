@@ -39,7 +39,8 @@ export async function bootstrapWork(
 
   // Blueprint/Gates/Expander follow the effective scale, not the declared label.
   const effective_scale = scale_check.effective_scale;
-  const assets = expander.expand({ seed: input.seed, characters: input.characters, effective_scale });
+  // [PROPOSAL: docs/proposals/archive/2026-06-09/proposal_phase3b_llm_expander_v001.md section 4] await: expander may be async (remote LLM)
+  const assets = await expander.expand({ seed: input.seed, characters: input.characters, effective_scale });
   const { blueprint, episode_cards } = buildBasicBlueprint(input.seed, input.shape);
 
   // Draft authorial intent (rest auto-generated; user edits later).
