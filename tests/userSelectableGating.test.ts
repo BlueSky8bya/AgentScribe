@@ -9,22 +9,30 @@ const SAVE = { ...process.env };
 afterEach(() => { process.env = { ...SAVE }; });
 
 describe("live != user-selectable", () => {
-  it("Claude/Gemini are adapter_mode=live but NOT user_selectable (gated)", () => {
-    for (const p of ["claude", "gemini"] as const) {
-      for (const e of CAPABILITY_MATRIX.filter((x) => x.provider_id === p)) {
-        expect(e.adapter_mode).toBe("live");
-        expect(e.user_selectable).toBe(false);
-        expect(e.can_generate_real_output).toBe(false);
-      }
+  it("Gemini is adapter_mode=live but NOT user_selectable (still gated); Claude promoted", () => {
+    for (const e of CAPABILITY_MATRIX.filter((x) => x.provider_id === "gemini")) {
+      expect(e.adapter_mode).toBe("live");
+      expect(e.user_selectable).toBe(false);
+      expect(e.can_generate_real_output).toBe(false);
+    }
+    for (const e of CAPABILITY_MATRIX.filter((x) => x.provider_id === "claude")) {
+      expect(e.user_selectable).toBe(true);
+      expect(e.can_generate_real_output).toBe(true);
     }
   });
 
-  it("gated-live provider is rejected in normal use; allowed only with dev override + key", () => {
+  it("gated-live provider (gemini) rejected in normal use; allowed only with dev override + key", () => {
+    process.env.GEMINI_API_KEY = "x";
+    delete process.env.ALLOW_MOCK_PROVIDERS;
+    expect(canRunRealGeneration("gemini")).toBe(false); // gated, no override
+    process.env.ALLOW_MOCK_PROVIDERS = "1";
+    expect(canRunRealGeneration("gemini")).toBe(true); // dev override
+  });
+
+  it("promoted provider (claude) runs with key, no override needed", () => {
     process.env.ANTHROPIC_API_KEY = "x";
     delete process.env.ALLOW_MOCK_PROVIDERS;
-    expect(canRunRealGeneration("claude")).toBe(false); // gated, no override
-    process.env.ALLOW_MOCK_PROVIDERS = "1";
-    expect(canRunRealGeneration("claude")).toBe(true); // dev override
+    expect(canRunRealGeneration("claude")).toBe(true);
   });
 
   it("openai stays user-selectable/stable", () => {

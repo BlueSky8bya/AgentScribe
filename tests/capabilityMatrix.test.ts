@@ -20,8 +20,8 @@ describe("capabilityMatrix", () => {
     expect(getEntry("openai", "cheap")?.model_id).toBe("gpt-5.4-mini");
   });
 
-  it("gemini/claude/deepseek are experimental and NOT real-output (gated)", () => {
-    for (const p of ["gemini", "claude", "deepseek"] as const) {
+  it("gemini/deepseek remain experimental and NOT real-output (gated)", () => {
+    for (const p of ["gemini", "deepseek"] as const) {
       for (const e of CAPABILITY_MATRIX.filter((x) => x.provider_id === p)) {
         expect(e.can_generate_real_output).toBe(false);
         expect(e.status).toBe("experimental");
@@ -29,12 +29,16 @@ describe("capabilityMatrix", () => {
     }
   });
 
-  it("3C-2: claude/gemini live adapters but NOT user_selectable; deepseek stays mock", () => {
-    for (const p of ["claude", "gemini"] as const) {
-      for (const e of CAPABILITY_MATRIX.filter((x) => x.provider_id === p)) {
-        expect(e.adapter_mode).toBe("live");
-        expect(e.user_selectable).toBe(false);
-      }
+  it("3C-2c: claude PROMOTED (live + user_selectable + beta); gemini live-gated; deepseek mock", () => {
+    for (const e of CAPABILITY_MATRIX.filter((x) => x.provider_id === "claude")) {
+      expect(e.adapter_mode).toBe("live");
+      expect(e.user_selectable).toBe(true);
+      expect(e.can_generate_real_output).toBe(true);
+      expect(e.status).toBe("beta");
+    }
+    for (const e of CAPABILITY_MATRIX.filter((x) => x.provider_id === "gemini")) {
+      expect(e.adapter_mode).toBe("live");
+      expect(e.user_selectable).toBe(false);
     }
     for (const e of CAPABILITY_MATRIX.filter((x) => x.provider_id === "deepseek")) {
       expect(e.adapter_mode).toBe("mock");

@@ -66,26 +66,28 @@ export const CAPABILITY_MATRIX: CapabilityEntry[] = [
     price_snapshot_date: SNAPSHOT, source_url: OPENAI_SRC, status: "stable",
   },
   // --- Claude (LIVE adapter; NOT user-selectable until canary passes) ---
+  // PROMOTED 2026-06-09 (Phase 3C-2c): smoke canary PASS (leak=0, schema=100%, fallback=0, payload ok).
+  // Report: docs/test_reports/2026-06-09/test_provider_canary_claude_v002.md
   {
     provider_id: "claude", model_id: "claude-haiku-4-5", tier: "cheap",
-    adapter_mode: "live", user_selectable: false, can_generate_real_output: false,
+    adapter_mode: "live", user_selectable: true, can_generate_real_output: true,
     supports_json_mode: false, supports_json_schema: true, supports_tool_use: true,
     usage_token_fields: ["input_tokens", "output_tokens"],
     cached_token_supported: true, reasoning_token_supported: false,
     max_input_tokens: 200_000, max_output_tokens: 64_000, timeout_ms: 60_000,
     retry_policy: "1 retry then deterministic fallback",
-    price_snapshot_date: SNAPSHOT, source_url: CLAUDE_SRC, status: "experimental",
+    price_snapshot_date: SNAPSHOT, source_url: CLAUDE_SRC, status: "beta",
   },
   {
     provider_id: "claude", model_id: "claude-sonnet-4-6", tier: "quality",
-    adapter_mode: "live", user_selectable: false, can_generate_real_output: false,
+    adapter_mode: "live", user_selectable: true, can_generate_real_output: true,
     supports_json_mode: false, supports_json_schema: true, supports_tool_use: true,
     usage_token_fields: ["input_tokens", "output_tokens"],
     cached_token_supported: true, reasoning_token_supported: false,
     max_input_tokens: 1_000_000, max_output_tokens: 64_000, timeout_ms: 90_000,
     // Claude structured outputs compile/cache a schema grammar -> first request can be slower.
     retry_policy: "1 retry then deterministic fallback (note: first-request schema-compile latency)",
-    price_snapshot_date: SNAPSHOT, source_url: CLAUDE_SRC, status: "experimental",
+    price_snapshot_date: SNAPSHOT, source_url: CLAUDE_SRC, status: "beta",
   },
   // --- Gemini (LIVE adapter; NOT user-selectable until canary passes) ---
   {
@@ -180,8 +182,7 @@ export function hasKey(provider: ProviderId): boolean {
 }
 
 const NOTE: Partial<Record<ProviderId, string>> = {
-  claude: "준비중 (live adapter, canary 통과 전이라 선택 불가)",
-  gemini: "준비중 (live adapter, canary 통과 전이라 선택 불가)",
+  gemini: "준비중 (canary api_error 미해결 — 별도 제안 대기)",
   deepseek: "준비중 (mock) — 공식 모델명/데이터 정책 재확인 필요",
 };
 

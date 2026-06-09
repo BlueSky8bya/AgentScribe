@@ -15,8 +15,9 @@
 | phase3b_status | done 2026-06-09 (Node backend, OpenAI model_router, input firewall, LLM expander, cost ledger, fallback) |
 | phase3c1_status | done 2026-06-09 (provider adapter foundation, capability matrix, /api/providers, allowlist, mock adapters, pricing price_status, canary harness) |
 | phase3c2_status | done 2026-06-09 (live Claude+Gemini adapters gated by user_selectable; verified pricing; first-request latency; canary caps; DeepSeek still placeholder/mock) |
-| phase3c2b_status | done 2026-06-09 (tooling + real-API smoke canary run). Claude FAIL(fallback_rate=0.2), Gemini FAIL(fallback_rate=0.6) -> NEITHER promoted; both stay experimental/user_selectable=false. Reports: docs/test_reports/2026-06-09/ |
-| active_task | none. Next: investigate canary fallbacks (structured-output robustness) before re-running; or Phase 4 Writer. Each needs its own proposal. |
+| phase3c2b_status | done 2026-06-09 (tooling + real-API smoke canary run). Claude/Gemini initially FAIL on fallback_rate. |
+| phase3c2c_status | done 2026-06-09 (diagnosis + hardening: max_tokens 8192, central JSON extract, withTimeout, classify/diagnose). Claude PASS -> PROMOTED (live + user_selectable=true + beta, haiku+sonnet). Gemini FAIL (api_error 2/5, not schema) -> stays experimental; further fix deferred to its own proposal (§9.1). Reports: docs/test_reports/2026-06-09/*_v002.md |
+| active_task | none. Options: Gemini api_error follow-up proposal; DeepSeek live proposal; Phase 4 Writer. |
 | director_status | idle |
 | planner_status | idle |
 | writer_status | idle |
