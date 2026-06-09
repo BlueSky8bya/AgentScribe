@@ -20,8 +20,9 @@ export class ClaudeAdapter implements ProviderAdapter {
 
   async generate(prompt: AdapterPrompt, model: string): Promise<AdapterResult> {
     const msg = await this.client.messages.create({
+      // Higher cap: 4096 truncated mid-JSON on richer seeds -> invalid JSON -> fallback (3C-2b finding).
       model,
-      max_tokens: 4096,
+      max_tokens: 8192,
       system: prompt.system + " Output ONLY a single JSON object, no prose, no markdown fences.",
       messages: [{ role: "user", content: prompt.user }],
     });
@@ -30,7 +31,8 @@ export class ClaudeAdapter implements ProviderAdapter {
       .map((b) => b.text)
       .join("");
     return {
-      rawJson: stripFences(text),
+      // Raw text — robust extraction/validation is centralized in canary/classify.parseDraft.
+      rawJson: text,
       usage: {
         input_tokens: msg.usage?.input_tokens ?? 0,
         output_tokens: msg.usage?.output_tokens ?? 0,
@@ -39,11 +41,4 @@ export class ClaudeAdapter implements ProviderAdapter {
       },
     };
   }
-}
-
-/** Claude may wrap JSON in ```json fences despite instructions; strip them. */
-function stripFences(s: string): string {
-  const t = s.trim();
-  if (t.startsWith("```")) return t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-  return t;
 }

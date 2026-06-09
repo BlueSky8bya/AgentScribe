@@ -2,6 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { ClaudeAdapter } from "../server/providers/claudeAdapter.js";
 import { GeminiAdapter } from "../server/providers/geminiAdapter.js";
+import { parseDraft } from "../server/canary/classify.js";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { GoogleGenAI } from "@google/genai";
 
@@ -18,7 +19,8 @@ describe("ClaudeAdapter", () => {
       },
     } as unknown as Anthropic;
     const r = await new ClaudeAdapter(fake).generate({ system: "s", user: "u" }, "claude-sonnet-4-6");
-    expect(JSON.parse(r.rawJson)).toHaveProperty("characters");
+    // Adapter returns RAW text (with fences); central parseDraft handles extraction.
+    expect(parseDraft(r.rawJson).ok).toBe(true);
     expect(r.usage.input_tokens).toBe(120);
     expect(r.usage.output_tokens).toBe(60);
     expect(r.usage.cached_tokens).toBe(10);
