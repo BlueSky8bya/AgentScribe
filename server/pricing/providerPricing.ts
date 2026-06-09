@@ -36,9 +36,33 @@ export const PROVIDER_PRICING: PricingEntry[] = [
     input_price_per_1m_tokens: 0.75, output_price_per_1m_tokens: 4.5, cached_input_price_per_1m_tokens: 0.075,
     source_url: OPENAI_SRC, price_snapshot_date: SNAPSHOT, price_status: "verified", usable_for_cost_estimate: true,
   },
-  // Gemini / Claude / DeepSeek (placeholder — confirm official pricing at Phase 3C-2, then flip to verified)
-  ...placeholders("gemini", ["gemini-pending-cheap", "gemini-pending-quality"], "https://ai.google.dev/gemini-api/docs/pricing"),
-  ...placeholders("claude", ["claude-pending-cheap", "claude-pending-quality"], "https://platform.claude.com/docs/en/about-claude/models/overview"),
+  // Claude (verified 2026-06-09 via claude-api models/pricing reference)
+  {
+    provider: "claude", model: "claude-haiku-4-5",
+    input_price_per_1m_tokens: 1.0, output_price_per_1m_tokens: 5.0, cached_input_price_per_1m_tokens: 0.1,
+    source_url: "https://platform.claude.com/docs/en/about-claude/models/overview",
+    price_snapshot_date: "2026-06-09", price_status: "verified", usable_for_cost_estimate: true,
+  },
+  {
+    provider: "claude", model: "claude-sonnet-4-6",
+    input_price_per_1m_tokens: 3.0, output_price_per_1m_tokens: 15.0, cached_input_price_per_1m_tokens: 0.3,
+    source_url: "https://platform.claude.com/docs/en/about-claude/models/overview",
+    price_snapshot_date: "2026-06-09", price_status: "verified", usable_for_cost_estimate: true,
+  },
+  // Gemini (verified 2026-06-09 via Gemini pricing; paid-tier data NOT used to improve products)
+  {
+    provider: "gemini", model: "gemini-2.5-flash-lite",
+    input_price_per_1m_tokens: 0.1, output_price_per_1m_tokens: 0.4, cached_input_price_per_1m_tokens: 0,
+    source_url: "https://ai.google.dev/gemini-api/docs/pricing",
+    price_snapshot_date: "2026-06-09", price_status: "verified", usable_for_cost_estimate: true,
+  },
+  {
+    provider: "gemini", model: "gemini-3.5-flash",
+    input_price_per_1m_tokens: 1.5, output_price_per_1m_tokens: 9.0, cached_input_price_per_1m_tokens: 0,
+    source_url: "https://ai.google.dev/gemini-api/docs/pricing",
+    price_snapshot_date: "2026-06-09", price_status: "verified", usable_for_cost_estimate: true,
+  },
+  // DeepSeek (placeholder — confirm official model names/pricing/data policy at 3C-2 last step)
   ...placeholders("deepseek", ["deepseek-pending-cheap", "deepseek-pending-quality"], "https://api-docs.deepseek.com/quick_start/pricing-details-usd/"),
 ];
 

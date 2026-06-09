@@ -15,7 +15,7 @@ import { route, type RouteDecision } from "./modelRouter.js";
 import { resolveAdapter } from "./providers/registry.js";
 import type { ProviderAdapter } from "./providers/types.js";
 import { buildLedgerEntry, recordCost } from "./cost/costLedger.js";
-import { logLlmCall } from "./obs/llmLog.js";
+import { logLlmCall, isFirstRequest } from "./obs/llmLog.js";
 
 function caps(scale: ScaleMode): { rel: number; fs: number } {
   switch (scale) {
@@ -139,6 +139,7 @@ export class LlmExpander implements ExpanderAdapter {
 
     const prompt = { system: SYSTEM_PROMPT, user: buildUserPrompt(input) };
     const started = Date.now();
+    const first_request = isFirstRequest(decided.provider, decided.model);
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
@@ -146,6 +147,7 @@ export class LlmExpander implements ExpanderAdapter {
         const draft = LlmDraft.parse(JSON.parse(rawJson));
         logLlmCall({
           provider: decided.provider, model: decided.model, latency_ms: Date.now() - started,
+          is_first_request: first_request,
           error_type: null, input_tokens: usage.input_tokens, output_tokens: usage.output_tokens,
         });
         const expansion = clampToCaps(input, enrich(base, draft));
@@ -160,6 +162,7 @@ export class LlmExpander implements ExpanderAdapter {
         const reason = err instanceof Error ? err.name : "llm_error";
         logLlmCall({
           provider: decided.provider, model: decided.model, latency_ms: Date.now() - started,
+          is_first_request: first_request,
           error_type: reason, input_tokens: 0, output_tokens: 0,
         });
         const cost = buildLedgerEntry({

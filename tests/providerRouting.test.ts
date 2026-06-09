@@ -10,10 +10,10 @@ describe("modelRouter (multi-provider)", () => {
     expect(route({ effective_scale: "short" }).provider).toBe("openai"); // default provider
   });
 
-  it("maps a prepared provider to its (placeholder) matrix model", () => {
-    const d = route({ provider: "gemini", effective_scale: "short" });
-    expect(d.provider).toBe("gemini");
-    expect(d.model).toBe("gemini-pending-cheap");
+  it("maps providers to their matrix model (gemini live, deepseek placeholder)", () => {
+    expect(route({ provider: "gemini", effective_scale: "short" }).model).toBe("gemini-2.5-flash-lite");
+    expect(route({ provider: "claude", effective_scale: "long" }).model).toBe("claude-sonnet-4-6");
+    expect(route({ provider: "deepseek", effective_scale: "short" }).model).toBe("deepseek-pending-cheap");
   });
 
   it("decision never carries a key", () => {

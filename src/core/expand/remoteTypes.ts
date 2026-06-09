@@ -46,6 +46,8 @@ export interface ProviderSummary {
   id: ProviderId;
   status: "disabled" | "experimental" | "beta" | "stable";
   adapter_mode: "live" | "mock" | "disabled";
+  // [PROPOSAL: docs/.../proposal_phase3c2_live_provider_rollout_v001.md section 1.1] UI gate is user_selectable, separate from adapter_mode=live
+  user_selectable: boolean;
   can_generate_real_output: boolean;
   available: boolean;
   tiers: ("cheap" | "quality")[];

@@ -180,12 +180,12 @@ export function NewWorkWizard({ onComplete }: { onComplete?: (work: WorkRecord, 
               <label>
                 provider:{" "}
                 <select value={provider} onChange={(e) => setProvider(e.target.value as ProviderId)}>
-                  {(providers.length ? providers : [{ id: "openai", status: "stable", can_generate_real_output: true, available: true } as ProviderSummary]).map((p) => {
-                    const selectable = p.can_generate_real_output && p.available;
+                  {(providers.length ? providers : [{ id: "openai", status: "stable", user_selectable: true, can_generate_real_output: true, available: true } as ProviderSummary]).map((p) => {
+                    const selectable = p.user_selectable && p.available;
                     const label =
                       p.id.toUpperCase() +
                       (p.status !== "stable" ? ` (${p.status})` : "") +
-                      (!p.available ? " · 키 없음" : !p.can_generate_real_output ? " · 준비중" : "");
+                      (!p.available ? " · 키 없음" : !p.user_selectable ? " · 준비중" : "");
                     return (
                       <option key={p.id} value={p.id} disabled={!selectable}>
                         {label}

@@ -76,6 +76,15 @@ No WorkRecord change. Adds server-only provider types + extends cost/pricing.
 
 Router: `modelRouter.route({provider, ...})` resolves `{provider, model, tier, entry}` from the matrix allowlist; unknown/disabled tier throws. `/api/expand` rejects an explicitly-chosen unavailable provider with `provider_unavailable` (no silent OpenAI swap).
 
+## Phase 3C-2 (IMPLEMENTED) — live Claude + Gemini adapters (gated)
+
+- `CapabilityEntry` gains `user_selectable` — the UI/routing gate, SEPARATE from `adapter_mode`. `can_generate_real_output = adapter_mode==="live" && user_selectable`. Claude/Gemini are `adapter_mode:"live"` but `user_selectable:false` (experimental) until the canary promotes them. `canRunRealGeneration()` allows a gated-live provider only under the dev override (`ALLOW_MOCK_PROVIDERS=1`).
+- Live adapters: `claudeAdapter` (`@anthropic-ai/sdk`, `messages.create`, JSON via system instruction + fence strip, usage `input_tokens`/`output_tokens`/`cache_read_input_tokens`), `geminiAdapter` (`@google/genai`, `models.generateContent` + `responseMimeType:"application/json"`, usage `promptTokenCount`/`candidatesTokenCount`). Registry resolves live OpenAI/Claude/Gemini; DeepSeek stays mock.
+- Verified pricing added for Claude (`claude-haiku-4-5` cheap, `claude-sonnet-4-6` quality) and Gemini (`gemini-2.5-flash-lite` cheap, `gemini-3.5-flash` quality), snapshot 2026-06-09. DeepSeek pricing stays placeholder.
+- `LlmLogEntry` gains `is_first_request` (first call to a provider+model in-process) so Claude schema-compile warmup latency is visible.
+- Canary caps (`server/canary/runner.ts`): `CanaryCaps`/`DEFAULT_CANARY_CAPS` (≤30 calls, ≤$5), `withinCaps`, `runCanaryBounded` (stops before breaching a cap; returns `aborted`).
+- Data policy / `payload_class`: only `public_seed + writer_safe_only` leaves the server (private/secret firewalled). OpenAI/Anthropic API + Gemini paid-tier do not train on inputs by default; recorded with source URLs in the decision log.
+
 ## Deferred stub schemas (direction only; freeze in their Phase)
 
 `craft_trait_schema`, `craft_selection_schema`, `craft_decision_log_schema`, `character_bible_schema`, `cast_registry_schema`, `relationship_map_schema`, `character_reveal_schedule_schema`, `character_creation_gate_schema`, `cast_promotion_gate_schema`, `prompt_firewall_schema`, `character_info_grade/lifecycle_schema`, `cross_link/schema_canary`, `reader_probe_schema`, `subjective_evaluation_rubric_schema`, `judge_calibration_schema`, `model_routing_schema`, `llm_call_policy_schema`, `database_storage_schema`, `ui_screen_skeleton_schema`, `ui_latency_metrics_schema`, `character/cast_observability_schema`.

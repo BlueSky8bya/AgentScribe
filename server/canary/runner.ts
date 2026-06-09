@@ -129,3 +129,49 @@ export async function runCanary(
   for (const fx of CANARY_SEED_BANK) results.push(await runCanaryCase(fx, expand));
   return aggregateCanary(results, meta);
 }
+
+// --- Hard cost/call caps (proposal section 7) ---------------------------------
+export interface CanaryCaps {
+  max_calls: number;
+  max_cost_usd: number;
+}
+// Per-run hard ceilings: <=30 calls total, <=$5 total. Abort if exceeded.
+export const DEFAULT_CANARY_CAPS: CanaryCaps = { max_calls: 30, max_cost_usd: 5 };
+
+export function withinCaps(calls: number, cost_usd: number, caps: CanaryCaps = DEFAULT_CANARY_CAPS): boolean {
+  return calls <= caps.max_calls && cost_usd <= caps.max_cost_usd;
+}
+
+export interface BoundedCanaryResult {
+  report: CanaryReport;
+  calls: number;
+  cost_usd: number;
+  aborted: boolean; // true if a cap would have been exceeded (run stopped early)
+}
+
+/**
+ * Run the seed bank under hard caps. Each case = 1 call. Stops BEFORE a call that
+ * would breach max_calls or max_cost_usd. `expandCost` returns the per-call cost.
+ */
+export async function runCanaryBounded(
+  expandCost: (input: ExpandInput) => Promise<{ out: ExpansionResult; cost_usd: number }>,
+  meta: CanaryMeta,
+  caps: CanaryCaps = DEFAULT_CANARY_CAPS,
+): Promise<BoundedCanaryResult> {
+  const results: CanaryCaseResult[] = [];
+  let calls = 0;
+  let cost_usd = 0;
+  let aborted = false;
+  for (const fx of CANARY_SEED_BANK) {
+    if (!withinCaps(calls + 1, cost_usd, caps)) { aborted = true; break; }
+    const r = await runCanaryCase(fx, async (input) => {
+      const { out, cost_usd: c } = await expandCost(input);
+      cost_usd += c;
+      return out;
+    });
+    calls += 1;
+    results.push(r);
+    if (cost_usd > caps.max_cost_usd) { aborted = true; break; } // post-call cost breach
+  }
+  return { report: aggregateCanary(results, meta), calls, cost_usd, aborted };
+}

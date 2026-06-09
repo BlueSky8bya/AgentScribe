@@ -12,14 +12,29 @@ describe("costLedger price_status", () => {
     expect(e.estimated_cost_usd).toBeCloseTo(0.75, 5);
   });
 
-  it("placeholder pricing yields zero cost and placeholder status (not used)", () => {
+  it("placeholder pricing (deepseek) yields zero cost and placeholder status (not used)", () => {
     const e = buildLedgerEntry({
-      work_id: "w", phase: "phase3b_expansion", provider: "gemini", model: "gemini-pending-cheap",
+      work_id: "w", phase: "phase3b_expansion", provider: "deepseek", model: "deepseek-pending-cheap",
       usage: { input_tokens: 1_000_000, output_tokens: 1_000_000 }, fallback_used: false,
     });
     expect(e.price_status).toBe("placeholder");
     expect(e.estimated_cost_usd).toBe(0);
     expect(e.unit_price_input).toBe(0);
+  });
+
+  it("verified Gemini/Claude pricing computes real cost", () => {
+    const g = buildLedgerEntry({
+      work_id: "w", phase: "phase3b_expansion", provider: "gemini", model: "gemini-2.5-flash-lite",
+      usage: { input_tokens: 1_000_000, output_tokens: 0 }, fallback_used: false,
+    });
+    expect(g.price_status).toBe("verified");
+    expect(g.estimated_cost_usd).toBeCloseTo(0.1, 5);
+    const c = buildLedgerEntry({
+      work_id: "w", phase: "phase3b_expansion", provider: "claude", model: "claude-haiku-4-5",
+      usage: { input_tokens: 0, output_tokens: 1_000_000 }, fallback_used: false,
+    });
+    expect(c.price_status).toBe("verified");
+    expect(c.estimated_cost_usd).toBeCloseTo(5.0, 5);
   });
 
   it("unknown model -> n/a status, zero cost", () => {
